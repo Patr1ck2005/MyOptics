@@ -52,7 +52,7 @@ class OpticalSystem:
                 self.elements = []
             self.sorted = True
 
-    def propagate_to_cross_sections(self, z_positions, return_spectrum=False):
+    def propagate_to_cross_sections(self, z_positions, return_momentum_space_spectrum=False):
         """
         计算指定z位置的横截面光场。
 
@@ -93,7 +93,7 @@ class OpticalSystem:
                 current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength)
                 current_z = z
 
-            if return_spectrum:
+            if return_momentum_space_spectrum:
                 # 计算动量空间光谱
                 U_k = cp.fft.fftshift(cp.fft.fft2(cp.fft.ifftshift(current_U)))
                 dkx = 2 * PI / (x[-1] - x[0])

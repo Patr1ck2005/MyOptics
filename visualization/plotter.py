@@ -70,7 +70,7 @@ class Plotter:
         if has_spectrum:
             total_plots_per_section = 4  # 包含momentum space 的intensity和phase
         # 设置图像布局
-        fig, axes = plt.subplots(4, num_sections, figsize=(4 * num_sections, 20))
+        fig, axes = plt.subplots(4, num_sections, figsize=(4 * num_sections, 12))
         if num_sections == 1:
             axes = np.expand_dims(axes, axis=1)
 
@@ -144,7 +144,7 @@ class Plotter:
 
         # intensity图
         im0 = axes[0].imshow(intensity, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
-                             aspect='auto', cmap='rainbow', origin='lower', interpolation=None, norm=SymLogNorm(linthresh=1/np.e, linscale=1))  # norm=LogNorm()
+                             aspect='auto', cmap='rainbow', origin='lower', interpolation='nearest', norm=SymLogNorm(linthresh=1/np.e, linscale=1))  # norm=LogNorm()
         axes[0].set_title(f'longitudinal intensity at {direction} = {position}')
         axes[0].set_xlabel('z')
         xlabel = 'y' if direction == 'x' else 'x'
@@ -153,7 +153,7 @@ class Plotter:
 
         # phase图
         im1 = axes[1].imshow(phase, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
-                             aspect='auto', cmap='twilight', origin='lower', interpolation=None)
+                             aspect='auto', cmap='twilight', origin='lower', interpolation='nearest')
         axes[1].set_title(f'longitudinal phase at {direction} = {position}')
         axes[1].set_xlabel('z')
         axes[1].set_ylabel(xlabel)

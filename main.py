@@ -29,13 +29,15 @@ def main():
     f = w_0/np.tan(np.deg2rad(12))
     # f = w_0/np.tan(np.deg2rad(1))
     print(f)
-    # optical_system.add_element(PhasePlate(z_position=3, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+    optical_system.add_element(PhasePlate(z_position=3, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
     optical_system.add_element(Lens(z_position=f+3, focal_length=f))
-    optical_system.add_element(MomentumSpacePhasePlate(z_position=2*f+3, phase_function_k=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
+    # optical_system.add_element(MomentumSpacePhasePlate(z_position=2*f+3, phase_function_k=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
     optical_system.add_element(Lens(z_position=3*f+3, focal_length=f))
 
     # save_label = 'q_plate-Fresnel'
-    save_label = 'mystructer-Fresnel'
+    save_label = 'q_plate'
+    # save_label = 'mystructer-Fresnel'
+    # save_label = 'mystructer'
 
     # 创建绘图器
     plotter = Plotter(x, y)
@@ -44,7 +46,7 @@ def main():
     # cross_z_positions = [10, 20, 40, 70, 90]  # 需要计算的z位置
     # cross_z_positions = [47, 47.5, 48, 48.5, 49]  # 需要计算的z位置
     cross_z_positions = [0, 3, 2*f+2, 2*f+3, 4*f+3]  # 需要计算的z位置
-    cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_spectrum=True)
+    cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_momentum_space_spectrum=True)
     plotter.plot_cross_sections(cross_sections,
                                 save_label=save_label,
                                 show=False)

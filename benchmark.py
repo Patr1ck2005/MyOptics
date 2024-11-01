@@ -17,14 +17,15 @@ except ImportError:
     cupy_available = False
 
 # 参数设置
-size = 1024*1  # 光束的尺寸
+mesh = 1024*10
+size = 1024*2  # 仿真的尺寸
 w0 = 10  # 高斯光束的宽度
 vortex_charge = 1  # 相位涡旋的阶数
 
 # 生成相位涡旋的高斯光束
-def generate_vortex_gaussian(size, w0, charge):
-    x = np.linspace(-size // 2, size // 2, size)
-    y = np.linspace(-size // 2, size // 2, size)
+def generate_vortex_gaussian(size, mesh, w0, charge):
+    x = np.linspace(-size // 2, size // 2, mesh)
+    y = np.linspace(-size // 2, size // 2, mesh)
     X, Y = np.meshgrid(x, y)
     R = np.sqrt(X**2 + Y**2)
     theta = np.arctan2(Y, X)
@@ -32,7 +33,7 @@ def generate_vortex_gaussian(size, w0, charge):
     return gaussian_beam
 
 # 生成测试数据
-data = generate_vortex_gaussian(size, w0, vortex_charge)
+data = generate_vortex_gaussian(size, mesh, w0, vortex_charge)
 
 # 计时函数
 def benchmark_fft(library_name, fft_func, data):
