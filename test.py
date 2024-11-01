@@ -6,7 +6,7 @@ from visualization.plotter import Plotter
 # Define parameters
 wavelength = 0.5  # Wavelength in micrometers
 sim_size = 100  # Simulation size
-mesh = 1024  # Mesh size
+mesh = 1024+1  # Mesh size ( +1 to maintain central symmetry)
 w_0 = 10.0  # Beam waist
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)

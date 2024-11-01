@@ -14,7 +14,7 @@ def main():
     print(w_0)
     # w_0 = 5.0
     sim_size = 10*w_0
-    mesh = 512*8+1
+    mesh = 1024*2+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
     X, Y = np.meshgrid(x, y)
