@@ -2,7 +2,7 @@
 
 import numpy as np
 from optical_system.system import OpticalSystem
-from optical_system.elements import Lens, PhasePlate
+from optical_system.elements import Lens, PhasePlate, MomentumSpacePhasePlate
 from visualization.plotter import Plotter
 from utils.constants import PI
 
@@ -13,7 +13,7 @@ def main():
     w_0 = wavelength/theta/PI
     print(w_0)
     # w_0 = 5.0
-    sim_size = 4*w_0
+    sim_size = 5*w_0
     mesh = 512*4+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
@@ -30,6 +30,7 @@ def main():
     print(f)
     optical_system.add_element(PhasePlate(z_position=3, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
     optical_system.add_element(Lens(z_position=f+3, focal_length=f))
+    # optical_system.add_element(MomentumSpacePhasePlate(z_position=2*f+3, phase_function_k=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
     optical_system.add_element(Lens(z_position=3*f+3, focal_length=f))
 
     # 创建绘图器
@@ -38,7 +39,7 @@ def main():
     # 计算并绘制横截面
     # cross_z_positions = [10, 20, 40, 70, 90]  # 需要计算的z位置
     # cross_z_positions = [47, 47.5, 48, 48.5, 49]  # 需要计算的z位置
-    cross_z_positions = [3, 2*f+3, 4*f+3]  # 需要计算的z位置
+    cross_z_positions = [0, 3, 2*f+2, 2*f+3, 4*f+3]  # 需要计算的z位置
     cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_spectrum=True)
     plotter.plot_cross_sections(cross_sections)
 
@@ -46,7 +47,7 @@ def main():
     # 例如，沿x方向，在x=0的位置
     direction = 'x'
     position = 0.0
-    num_z = 70
+    num_z = 50*2
     z_max = 3+4*f
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
         direction=direction, position=position, num_z=num_z, z_max=z_max
