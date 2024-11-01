@@ -1,0 +1,32 @@
+# 忽略所有隐藏文件夹
+.*
+!.gitignore
+
+# Logs
+####################
+logs/
+*.log
+
+# 忽略所有图片文件
+*.png
+*.jpg
+
+# 忽略文件
+*.npy
+*.npz
+*.fsp
+*.txt
+*.json
+*.lsf
+*.mat
+*.h5
+*.pkl
+*.csv
+*.zip
+*.pov
+
+# 忽略多个文件夹
+my_folder/
+.idea/
+
+
