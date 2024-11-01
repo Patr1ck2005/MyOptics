@@ -146,7 +146,7 @@ class Plotter:
         plt.close(fig)
 
     def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0,
-                                  save_label='default'):
+                                  save_label='default', show=False):
         """
         绘制纵截面光场的intensity和phase。
 
@@ -189,5 +189,6 @@ class Plotter:
         dpi_intensity = self.calculate_dynamic_dpi(intensity.shape, (10, 8))
 
         plt.savefig(f'{save_label}-longitudinal_section.png', dpi=dpi_intensity)
-        plt.show()
+        if show:
+            plt.show()
         plt.close(fig)

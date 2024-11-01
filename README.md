@@ -144,7 +144,7 @@ if plot_longitudinal_section:  # independently of cross_sections
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
 
     # Plot
-    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test-longitudinal_section')
+    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test-longitudinal_section', show=False)
 ```
 
 ### Explanation 📖

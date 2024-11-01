@@ -14,7 +14,7 @@ def main():
     print(w_0)
     # w_0 = 5.0
     sim_size = 10*w_0
-    mesh = 1024*2+1
+    mesh = 1024*4+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
     X, Y = np.meshgrid(x, y)
@@ -57,7 +57,7 @@ def main():
     # 例如，沿x方向，在x=0的位置
     direction = 'x'
     position = 0.0
-    num_z = 100*2
+    num_z = 100
     z_max = 3+4*f
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
         direction=direction,
@@ -69,7 +69,9 @@ def main():
     plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
                                       direction=direction,
                                       position=position,
-                                      save_label=save_label)
+                                      save_label=save_label,
+                                      show=False)
+
 
 if __name__ == "__main__":
     main()
