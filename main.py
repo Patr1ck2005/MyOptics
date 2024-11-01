@@ -27,6 +27,7 @@ def main():
 
     # # 添加光学元件
     f = w_0/np.tan(np.deg2rad(12))
+    # f = w_0/np.tan(np.deg2rad(1))
     print(f)
     optical_system.add_element(PhasePlate(z_position=3, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
     optical_system.add_element(Lens(z_position=f+3, focal_length=f))

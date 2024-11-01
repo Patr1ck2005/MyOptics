@@ -4,6 +4,7 @@ import numpy as np
 
 from optical_system.elements import Lens, PhasePlate
 from propagation.angular_spectrum import angular_spectrum_propagate
+from propagation.angular_spectrum_longitudinal import angular_spectrum_propagate_longitudinal, calculate_field_on_grid
 
 from utils.constants import PI
 
@@ -184,3 +185,96 @@ class OpticalSystem:
             phase[:, i] = np.angle(U_longitudinal_segment)
 
         return coord_axis, z_coords, intensity, phase
+
+    # def propagate_to_longitudinal_section(self, direction='x', position=0.0, num_z=500, z_max=100):
+    #     """
+    #     计算指定方向和位置的纵截面光场。
+    #
+    #     参数:
+    #     direction (str): 'x' 或 'y'，指定沿哪个轴进行纵截面。
+    #     position (float): 在指定轴上的固定位置。
+    #     num_z (int): z轴采样点数。
+    #     z_max (float): 最大传播距离。
+    #
+    #     返回:
+    #     tuple: (coord_axis, z_coords, intensity, phase)
+    #         coord_axis (ndarray): x或y坐标数组。
+    #         z_coords (ndarray): z轴坐标数组。
+    #         intensity (ndarray): 光场强度二维数组，形状为 (len(coord_axis), len(z_coords))。
+    #         phase (ndarray): 光场相位二维数组，形状为 (len(coord_axis), len(z_coords))。
+    #     """
+    #     if direction not in ['x', 'y']:
+    #         raise ValueError("direction必须是 'x' 或 'y'")
+    #
+    #     self.sort_elements()
+    #
+    #     # 定义纵截面坐标轴
+    #     coord_axis = self.y if direction == 'x' else self.x
+    #     # 定义z坐标
+    #     z_coords = np.linspace(0, z_max, num_z)
+    #     intensity = np.zeros((1, len(coord_axis)))
+    #     phase = np.zeros((1, len(coord_axis)))
+    #
+    #     # 初始化变量
+    #     current_z = 0
+    #     element_index = 0
+    #     wavelength = self.wavelength
+    #     x = self.x
+    #     y = self.y
+    #     dx = x[1] - x[0]
+    #     dy = y[1] - y[0]
+    #
+    #     # 初始化纵截面光场
+    #     if direction == 'x':
+    #         # y固定在position，提取U[:, y_idx]
+    #         y_idx = np.argmin(np.abs(self.y - position))
+    #         U_initial = self.U[:, y_idx].copy()
+    #         coord_dir = self.x.copy()
+    #     else:
+    #         # x固定在position，提取U[x_idx, :]
+    #         x_idx = np.argmin(np.abs(self.x - position))
+    #         U_initial = self.U[x_idx, :].copy()
+    #         coord_dir = self.y.copy()
+    #
+    #     # 将光学元件的位置添加到 z 分段中
+    #     z_segments = [0] + self.element_positions + [z_max]
+    #     z_segments = [z for z in z_segments if z <= z_max]
+    #     num_segments = len(z_segments) - 1
+    #
+    #     # 初始化 z 位置索引
+    #     z_indices = np.searchsorted(z_coords, z_segments)
+    #
+    #     # 复制初始光场
+    #     U_cross = U_initial.copy()
+    #
+    #     # 遍历每个段
+    #     for seg_idx in range(num_segments):
+    #         z_start = z_segments[seg_idx]
+    #         z_end = z_segments[seg_idx + 1]
+    #         z_range = z_coords[z_indices[seg_idx]:z_indices[seg_idx + 1]]
+    #
+    #         # 应用当前区域的光学元件
+    #         if element_index < len(self.elements) and self.element_positions[element_index] < z_end:
+    #             # 应用光学元件
+    #             element = self.elements[element_index]
+    #             U_cross = element.apply(U_cross, x, y, wavelength)
+    #             # 处理下一个元件
+    #             element_index += 1
+    #
+    #         # 如果段内没有 z 坐标点，跳过
+    #         if len(z_range) == 0:
+    #             continue
+    #
+    #         # 计算在该段内的传播距离数组
+    #         z_propagate = z_range
+    #         # 在该段内逐步传播
+    #         X, Z = np.meshgrid(x, z_propagate)
+    #         Y = np.full_like(X, 0)
+    #         U_longitudinal = calculate_field_on_grid(
+    #             U_cross, x, y, dx, dy, X, Y, Z, wavelength)
+    #
+    #         # 存储当前区域的光场
+    #         intensity = np.concatenate((intensity, np.abs(U_longitudinal) ** 2), axis=0)
+    #         phase = np.concatenate((phase, np.angle(U_longitudinal)), axis=0)
+    #
+    #     return coord_dir, z_coords, intensity, phase
