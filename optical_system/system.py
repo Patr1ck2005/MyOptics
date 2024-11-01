@@ -1,10 +1,9 @@
 # optical_system/system.py
 
 import numpy as np
-
+import cupy as cp
 from optical_system.elements import Lens, PhasePlate
 from propagation.angular_spectrum import angular_spectrum_propagate
-
 from utils.constants import PI
 
 
@@ -20,9 +19,9 @@ class OpticalSystem:
         initial_field (ndarray): 初始光场。
         """
         self.wavelength = wavelength
-        self.x = x
-        self.y = y
-        self.U = initial_field
+        self.x = cp.array(x)  # 转换为CuPy数组
+        self.y = cp.array(y)  # 转换为CuPy数组
+        self.U = cp.array(initial_field)  # 转换为CuPy数组
         self.elements = []
         self.element_positions = []
         self.sorted = False
@@ -71,9 +70,8 @@ class OpticalSystem:
         current_U = self.U.copy()
         current_z = 0
         element_index = 0
-        x = self.x
-        y = self.y
-        X, Y = np.meshgrid(x, y)
+        x, y = self.x, self.y
+        X, Y = cp.meshgrid(x, y)
         wavelength = self.wavelength
 
         sorted_z = np.sort(z_positions).tolist()
@@ -97,17 +95,20 @@ class OpticalSystem:
 
             if return_spectrum:
                 # 计算动量空间光谱
-                U_k = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(current_U)))
+                U_k = cp.fft.fftshift(cp.fft.fft2(cp.fft.ifftshift(current_U)))
                 dkx = 2 * PI / (x[-1] - x[0])
                 dky = 2 * PI / (y[-1] - y[0])
-                kx = np.fft.fftshift(np.fft.fftfreq(len(x), d=(x[1] - x[0]))) * 2 * PI
-                ky = np.fft.fftshift(np.fft.fftfreq(len(y), d=(y[1] - y[0]))) * 2 * PI
-                # results[z] = (U_k.copy(), kx.copy(), ky.copy())
-                results[z] = ((current_U.copy(), x.copy(), y.copy()), (U_k.copy(), kx.copy(), ky.copy()))
+                kx = cp.fft.fftshift(cp.fft.fftfreq(len(x), d=(x[1] - x[0]))) * 2 * PI
+                ky = cp.fft.fftshift(cp.fft.fftfreq(len(y), d=(y[1] - y[0]))) * 2 * PI
+                results[z] = (
+                    (cp.asnumpy(current_U.copy()), np.array(x.get()), np.array(y.get())),
+                    (cp.asnumpy(U_k.copy()), np.array(kx.get()), np.array(ky.get()))
+                )
             else:
-                results[z] = (current_U.copy(), x.copy(), y.copy()), ()
+                results[z] = (cp.asnumpy(current_U.copy()), np.array(x.get()), np.array(y.get())), ()
 
         return results
+
     def propagate_to_longitudinal_section(self, direction='x', position=0.0, num_z=500, z_max=100):
         """
         计算指定方向和位置的纵截面光场。
@@ -132,6 +133,7 @@ class OpticalSystem:
 
         # 定义纵截面坐标轴
         coord_axis = self.y if direction == 'x' else self.x
+        coord_axis_np = np.array(coord_axis.get())  # 转换为NumPy格式
         # 定义z坐标
         z_coords = np.linspace(0, z_max, num_z)
         intensity = np.zeros((len(coord_axis), len(z_coords)))
@@ -171,16 +173,14 @@ class OpticalSystem:
 
             # 切片纵截面光场
             if direction == 'x':
-                # y固定在position，提取U[:, y_idx]
-                y_idx = np.argmin(np.abs(self.y - position))
+                y_idx = cp.argmin(cp.abs(self.y - position))
                 U_longitudinal_segment = U_cross[:, y_idx].copy()
             else:
-                # x固定在position，提取U[x_idx, :]
-                x_idx = np.argmin(np.abs(self.x - position))
+                x_idx = cp.argmin(cp.abs(self.x - position))
                 U_longitudinal_segment = U_cross[x_idx, :].copy()
 
             # 保存光场强度和相位
-            intensity[:, i] = np.abs(U_longitudinal_segment) ** 2
-            phase[:, i] = np.angle(U_longitudinal_segment)
+            intensity[:, i] = cp.asnumpy(cp.abs(U_longitudinal_segment) ** 2)
+            phase[:, i] = cp.asnumpy(cp.angle(U_longitudinal_segment))
 
-        return coord_axis, z_coords, intensity, phase
+        return coord_axis_np, z_coords, intensity, phase

@@ -1,6 +1,6 @@
 # optical_system/elements.py
 
-import numpy as np
+import cupy as cp
 from utils.constants import PI
 
 class OpticalElement:
@@ -46,9 +46,9 @@ class Lens(OpticalElement):
         返回:
         ndarray: 处理后的光场。
         """
-        X, Y = np.meshgrid(x, y)
+        X, Y = cp.meshgrid(x, y)
         k = 2 * PI / wavelength
-        phase = np.exp(-1j * k / (2 * self.focal_length) * (X**2 + Y**2))
+        phase = cp.exp(-1j * k / (2 * self.focal_length) * (X**2 + Y**2))
         return U * phase
 
 class PhasePlate(OpticalElement):
@@ -69,7 +69,7 @@ class PhasePlate(OpticalElement):
         返回:
         ndarray: 处理后的光场。
         """
-        X, Y = np.meshgrid(x, y)
+        X, Y = cp.meshgrid(x, y)
         phase_factor = self.phase_function(X, Y)
         return U * phase_factor
 
@@ -102,22 +102,18 @@ class MomentumSpacePhasePlate(OpticalElement):
         # 计算动量空间坐标 (kx, ky)
         dx = x[1] - x[0]
         dy = y[1] - y[0]
-        kx = np.fft.fftfreq(x.size, dx) * 2 * PI
-        ky = np.fft.fftfreq(y.size, dy) * 2 * PI
-        # kx = np.fft.fftshift(np.fft.fftfreq(x.size, dx)) * 2 * PI
-        # ky = np.fft.fftshift(np.fft.fftfreq(y.size, dy)) * 2 * PI
-        KX, KY = np.meshgrid(kx, ky)
+        kx = cp.fft.fftfreq(x.size, dx) * 2 * PI
+        ky = cp.fft.fftfreq(y.size, dy) * 2 * PI
+        KX, KY = cp.meshgrid(kx, ky)
 
         # 进入动量空间 (傅里叶变换)
-        # U_k = np.fft.fftshift(np.fft.fft2(U))
-        U_k = np.fft.fft2(U)
+        U_k = cp.fft.fft2(U)
 
         # 应用动量空间相位调制
         phase_factor_k = self.phase_function_k(KX, KY)
         U_k_modified = U_k * phase_factor_k
 
         # 返回到实空间 (逆傅里叶变换)
-        # U_modified = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(U_k_modified)))
-        U_modified = np.fft.ifft2(U_k_modified)
+        U_modified = cp.fft.ifft2(U_k_modified)
 
         return U_modified
