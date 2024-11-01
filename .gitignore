@@ -16,6 +16,7 @@ logs/
 *.npz
 *.fsp
 *.txt
+!requirements.txt
 *.json
 *.lsf
 *.mat
