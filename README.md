@@ -46,12 +46,12 @@ This program employs the Angular Spectrum Method to calculate the light field di
 
 ## Benchmark (Performance Data) ⏱️
 
-| Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (4096x4096) ⚡ |
-|---------------------|------------------------|---------------------------|--------------------------|
-| MATLAB              | TBD                    | TBD                       | TBD                      |
-| NumPy (CPU)         | TBD                    | TBD                       | TBD                      |
-| SciPy (CPU)         | TBD                    | TBD                       | TBD                      |
-| CuPy (GPU)          | TBD                    | TBD                       | TBD                      |
+| Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (8192x8192) ⚡ |
+|---------------------|--------------------------|-----------------------------|----------------------------|
+| MATLAB              | TBD                      | TBD                         | TBD                        |
+| NumPy (CPU)         | 0.003 s                  | 0.038 s                     | 3.438 s                    |
+| SciPy (CPU)         | 0.001 s                  | 0.023 s                     | 1.919 s                    |
+| CuPy (GPU)          | 0.155 s                  | 0.018 s                     | 0.094 s                    |
 
 ## Usage 📝
 

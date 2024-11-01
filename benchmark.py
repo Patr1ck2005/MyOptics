@@ -17,8 +17,8 @@ except ImportError:
     cupy_available = False
 
 # 参数设置
-mesh = 1024*10
-size = 1024*2  # 仿真的尺寸
+mesh = 1024*8
+size = 1000  # 仿真的尺寸
 w0 = 10  # 高斯光束的宽度
 vortex_charge = 1  # 相位涡旋的阶数
 
