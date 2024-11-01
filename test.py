@@ -6,7 +6,7 @@ from visualization.plotter import Plotter
 # Define parameters
 wavelength = 0.5  # Wavelength in micrometers
 sim_size = 100  # Simulation size
-mesh = 2048  # Mesh size
+mesh = 1024  # Mesh size
 w_0 = 10.0  # Beam waist
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
@@ -32,7 +32,7 @@ if plot_cross_sections:
     # Plot cross-sections
     cross_z_positions = [0, 1, 2 * f + 1, 4 * f + 1]
     cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_momentum_space_spectrum=True)
-    plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=True)
+    plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=False)
 if plot_longitudinal_section:
     # Plot longitudinal section (independent)
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(direction='x', position=0.0, num_z=100, z_max=4 * f + 1)
