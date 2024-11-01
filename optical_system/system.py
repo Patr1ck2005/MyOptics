@@ -1,8 +1,9 @@
 # optical_system/system.py
+from typing import Literal
 
 import numpy as np
 import cupy as cp
-from optical_system.elements import Lens, PhasePlate
+from optical_system.elements import OpticalElement
 from propagation.angular_spectrum import angular_spectrum_propagate
 from utils.constants import PI
 
@@ -52,7 +53,9 @@ class OpticalSystem:
                 self.elements = []
             self.sorted = True
 
-    def propagate_to_cross_sections(self, z_positions, return_momentum_space_spectrum=False):
+    def propagate_to_cross_sections(self, z_positions,
+                                    return_momentum_space_spectrum=False,
+                                    propagation_mode: Literal['Fresnel', 'Rigorous'] = 'Rigorous'):
         """
         计算指定z位置的横截面光场。
 
@@ -81,7 +84,8 @@ class OpticalSystem:
             while element_index < len(self.elements) and self.element_positions[element_index] <= z:
                 z_prop = self.element_positions[element_index] - current_z
                 if z_prop > 0:
-                    current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength)
+                    current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength,
+                                                           propagation_mode=propagation_mode)
                 # 应用光学元件
                 current_U = self.elements[element_index].apply(current_U, x, y, wavelength)
                 current_z = self.element_positions[element_index]
@@ -90,7 +94,8 @@ class OpticalSystem:
             # 传播到目标z位置
             z_prop = z - current_z
             if z_prop > 0:
-                current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength)
+                current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength,
+                                                       propagation_mode=propagation_mode)
                 current_z = z
 
             if return_momentum_space_spectrum:
@@ -109,7 +114,8 @@ class OpticalSystem:
 
         return results
 
-    def propagate_to_longitudinal_section(self, direction='x', position=0.0, num_z=500, z_max=100):
+    def propagate_to_longitudinal_section(self, direction='x', position=0.0, num_z=500, z_max=100,
+                                          propagation_mode: Literal['Fresnel', 'Rigorous'] = 'Rigorous'):
         """
         计算指定方向和位置的纵截面光场。
 
@@ -157,7 +163,8 @@ class OpticalSystem:
                     # 传播到光学元件位置
                     z_prop_to_elem = z_elem - current_z
                     if z_prop_to_elem > 0:
-                        U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength)
+                        U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength,
+                                                             propagation_mode=propagation_mode)
                         current_z = z_elem
 
                 # 应用光学元件
@@ -168,7 +175,8 @@ class OpticalSystem:
 
             if z_prop > 0:
                 # 使用横截面传播函数进行纵向传播
-                U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength)
+                U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength,
+                                                     propagation_mode=propagation_mode)
                 current_z = z
 
             # 切片纵截面光场

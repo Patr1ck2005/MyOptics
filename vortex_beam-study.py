@@ -46,7 +46,9 @@ def main():
     # cross_z_positions = [10, 20, 40, 70, 90]  # 需要计算的z位置
     # cross_z_positions = [47, 47.5, 48, 48.5, 49]  # 需要计算的z位置
     cross_z_positions = [0, 3, 2*f+2, 2*f+3, 4*f+3]  # 需要计算的z位置
-    cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_momentum_space_spectrum=True)
+    cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions,
+                                                                propagation_mode='Rigorous',
+                                                                return_momentum_space_spectrum=True)
     plotter.plot_cross_sections(cross_sections,
                                 save_label=save_label,
                                 show=False)
@@ -58,7 +60,11 @@ def main():
     num_z = 100*2
     z_max = 3+4*f
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
-        direction=direction, position=position, num_z=num_z, z_max=z_max
+        direction=direction,
+        position=position,
+        num_z=num_z,
+        z_max=z_max,
+        propagation_mode='Rigorous',
     )
     plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
                                       direction=direction,

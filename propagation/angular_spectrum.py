@@ -1,6 +1,8 @@
 import cupy as cp
 
-def angular_spectrum_propagate(U, x, y, z, wavelength, return_spectrum=False):
+
+def angular_spectrum_propagate(U, x, y, z, wavelength, propagation_mode,
+                               return_momentum_space_spectrum=False,):
     """
     使用严格角谱法传播光场，并可选返回动量空间光谱。
 
@@ -28,15 +30,18 @@ def angular_spectrum_propagate(U, x, y, z, wavelength, return_spectrum=False):
     FX, FY = cp.meshgrid(fx, fy)
 
     # 严格的传播因子 H，考虑复数 kz
-    k_squared = k**2
+    k_squared = k ** 2
     KX = 2 * cp.pi * FX
     KY = 2 * cp.pi * FY
-    kz = cp.sqrt(k_squared - KX**2 - KY**2 + 0j)
+    kz = cp.sqrt(k_squared - KX ** 2 - KY ** 2 + 0j)
 
     # 传播因子
-    H = cp.exp(1j * kz * z)
-    # # 近似传播因子 H (可选)
-    # H = cp.exp(-1j * cp.pi * wavelength * z * (FX ** 2 + FY ** 2))
+    if propagation_mode == 'Fresnel':
+        H = cp.exp(-1j * cp.pi * wavelength * z * (FX ** 2 + FY ** 2))  # Fresnel 传播因子 H (可选)
+    elif propagation_mode == 'Rigorous':
+        H = cp.exp(1j * kz * z)
+    else:
+        raise ValueError('Invalid propagation mode')
 
     # 正向傅里叶变换
     U_fft = cp.fft.fft2(U)
@@ -45,7 +50,7 @@ def angular_spectrum_propagate(U, x, y, z, wavelength, return_spectrum=False):
     # 逆向傅里叶变换
     U_propagated = cp.fft.ifft2(U_propagated_fft)
 
-    if return_spectrum:
+    if return_momentum_space_spectrum:
         # 可选返回频域光谱
         return U_propagated, U_propagated_fft
     return U_propagated
