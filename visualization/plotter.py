@@ -50,7 +50,7 @@ class Plotter:
         plt.tight_layout()
         plt.show()
 
-    def plot_cross_sections(self, cross_sections):
+    def plot_cross_sections(self, cross_sections, save_label='default', show=False):
         """
         绘制多个z位置的横截面光场，包括空间域和momentum space 。
 
@@ -70,13 +70,16 @@ class Plotter:
         if has_spectrum:
             total_plots_per_section = 4  # 包含momentum space 的intensity和phase
         # 设置图像布局
-        fig, axes = plt.subplots(4, num_sections, figsize=(6 * num_sections, 20))
+        fig, axes = plt.subplots(4, num_sections, figsize=(4 * num_sections, 20))
         if num_sections == 1:
             axes = np.expand_dims(axes, axis=1)
 
         for i, (z, data) in enumerate(sorted(cross_sections.items())):
             # 绘制空间域
             U, x, y = data[0]
+            # 如果数据过大, 降采样
+            pass
+
             intensity = np.abs(U) ** 2
             phase = np.angle(U)
             extent = [x.min(), x.max(), y.min(), y.max()]
@@ -85,13 +88,13 @@ class Plotter:
             axes[0][i].set_title(f'intensity at z = {z:.2f}')
             axes[0][i].set_xlabel('x')
             axes[0][i].set_ylabel('y')
-            plt.colorbar(im0, ax=axes[0][i])
+            # plt.colorbar(im0, ax=axes[0][i])
 
             im1 = axes[1][i].imshow(phase, extent=extent, cmap='twilight', origin='lower')
             axes[1][i].set_title(f'phase at z = {z:.2f}')
             axes[1][i].set_xlabel('x')
             axes[1][i].set_ylabel('y')
-            plt.colorbar(im1, ax=axes[1][i])
+            # plt.colorbar(im1, ax=axes[1][i])
 
             if data[1]:
                 # 绘制momentum space 
@@ -104,22 +107,25 @@ class Plotter:
                 axes[2][i].set_title(f'momentum space intensity at z = {z:.2f}')
                 axes[2][i].set_xlabel('$k_x$ (rad/μm)')
                 axes[2][i].set_ylabel('$k_y$ (rad/μm)')
-                plt.colorbar(im2, ax=axes[2][i])
+                # plt.colorbar(im2, ax=axes[2][i])
 
                 im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight', origin='lower')
                 axes[3][i].set_title(f'momentum space phase at z = {z:.2f}')
                 axes[3][i].set_xlabel('$k_x$ (rad/μm)')
                 axes[3][i].set_ylabel('$k_y$ (rad/μm)')
-                plt.colorbar(im3, ax=axes[3][i])
+                # plt.colorbar(im3, ax=axes[3][i])
             else:
                 # 如果没有momentum space 数据，隐藏额外的子图
                 axes[2][i].axis('off')
                 axes[3][i].axis('off')
 
         plt.tight_layout()
-        plt.show()
+        plt.savefig(f'{save_label}-cross_sections.png', dpi=1000)
+        if show:
+            plt.show()
+        plt.close(fig)
 
-    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0):
+    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0, save_label='default'):
         """
         绘制纵截面光场的intensity和phase。
 
@@ -154,4 +160,6 @@ class Plotter:
         plt.colorbar(im1, ax=axes[1])
 
         plt.tight_layout()
+        plt.savefig(f'{save_label}-longitudinal_section.png', dpi=1000)
         plt.show()
+        plt.close(fig)

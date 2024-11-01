@@ -2,4 +2,4 @@ scipy
 numpy
 matplotlib
 
-cupy
+cupy-cuda12x

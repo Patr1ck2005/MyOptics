@@ -36,7 +36,7 @@ def angular_spectrum_propagate(U, x, y, z, wavelength, return_spectrum=False):
     # 传播因子
     H = cp.exp(1j * kz * z)
     # # 近似传播因子 H (可选)
-    # H = cp.exp(-1j * cp.pi * wavelength * z * (FX ** 2 + FY ** 2))
+    H = cp.exp(-1j * cp.pi * wavelength * z * (FX ** 2 + FY ** 2))
 
     # 正向傅里叶变换
     U_fft = cp.fft.fft2(U)
