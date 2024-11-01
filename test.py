@@ -25,13 +25,15 @@ optical_system.add_element(Lens(z_position=3 * f + 1, focal_length=f))
 plotter = Plotter(x, y)
 
 # Compute and Visualization
-plot_cross_sections = False
+plot_cross_sections = True
+plot_longitudinal_section = True
+
 if plot_cross_sections:
     # Plot cross-sections
     cross_z_positions = [0, 1, 2 * f + 1, 4 * f + 1]
     cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions, return_momentum_space_spectrum=True)
     plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=True)
-else:
+if plot_longitudinal_section:
     # Plot longitudinal section (independent)
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(direction='x', position=0.0, num_z=100, z_max=4 * f + 1)
     plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test-longitudinal_section')

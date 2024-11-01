@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LogNorm, SymLogNorm
+from matplotlib.colors import SymLogNorm
 
 
 class Plotter:
@@ -27,24 +27,15 @@ class Plotter:
         y_coords (ndarray): y轴坐标。
         title (str): 图标题。
         """
-        intensity = np.abs(U) ** 2
-        phase = np.angle(U)
+        intensity, phase = np.abs(U) ** 2, np.angle(U)
+        extent = [x_coords.min(), x_coords.max(), y_coords.min(), y_coords.max()]
 
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-        extent = [x_coords.min(), x_coords.max(), y_coords.min(), y_coords.max()]
-
-        im0 = axes[0].imshow(intensity, extent=extent, cmap='inferno', origin='lower')
-        axes[0].set_title('intensity')
-        axes[0].set_xlabel('x')
-        axes[0].set_ylabel('y')
-        plt.colorbar(im0, ax=axes[0])
-
-        im1 = axes[1].imshow(phase, extent=extent, cmap='twilight', origin='lower')
-        axes[1].set_title('phase')
-        axes[1].set_xlabel('x')
-        axes[1].set_ylabel('y')
-        plt.colorbar(im1, ax=axes[1])
+        for ax, data, cmap, label in zip(axes, [intensity, phase], ['inferno', 'twilight'], ['intensity', 'phase']):
+            im = ax.imshow(data, extent=extent, cmap=cmap, origin='lower', interpolation='nearest')
+            ax.set(title=label, xlabel='x', ylabel='y')
+            plt.colorbar(im, ax=ax)
 
         plt.suptitle(title)
         plt.tight_layout()
@@ -64,60 +55,39 @@ class Plotter:
             print("没有横截面数据可绘制。")
             return
 
-        # 计算总行数：每个z位置有2个（空间域）或4个（空间域+momentum space ）子图
-        total_plots_per_section = 2  # 默认空间域的intensity和phase
-        has_spectrum = any(len(value) == 2 for value in cross_sections.values())
-        if has_spectrum:
-            total_plots_per_section = 4  # 包含momentum space 的intensity和phase
-        # 设置图像布局
-        fig, axes = plt.subplots(4, num_sections, figsize=(4 * num_sections, 12))
-        if num_sections == 1:
-            axes = np.expand_dims(axes, axis=1)
+        total_plots_per_section = 4 if any(len(value) == 2 for value in cross_sections.values()) else 2
+        fig, axes = plt.subplots(total_plots_per_section, num_sections, figsize=(4 * num_sections, 12))
+        axes = np.atleast_2d(axes)  # 保证axes是2维，即使只有一个截面
 
         for i, (z, data) in enumerate(sorted(cross_sections.items())):
-            # 绘制空间域
             U, x, y = data[0]
-            # 如果数据过大, 降采样
-            pass
-
-            intensity = np.abs(U) ** 2
-            phase = np.angle(U)
+            intensity, phase = np.abs(U) ** 2, np.angle(U)
             extent = [x.min(), x.max(), y.min(), y.max()]
 
-            im0 = axes[0][i].imshow(intensity, extent=extent, cmap='inferno', origin='lower')
-            axes[0][i].set_title(f'intensity at z = {z:.2f}')
-            axes[0][i].set_xlabel('x')
-            axes[0][i].set_ylabel('y')
-            # plt.colorbar(im0, ax=axes[0][i])
+            im0 = axes[0][i].imshow(intensity, extent=extent, cmap='inferno', origin='lower', interpolation='nearest')
+            axes[0][i].set(title=f'intensity at z = {z:.2f}', xlabel='x', ylabel='y')
+            plt.colorbar(im0, ax=axes[0][i])
 
-            im1 = axes[1][i].imshow(phase, extent=extent, cmap='twilight', origin='lower')
-            axes[1][i].set_title(f'phase at z = {z:.2f}')
-            axes[1][i].set_xlabel('x')
-            axes[1][i].set_ylabel('y')
-            # plt.colorbar(im1, ax=axes[1][i])
+            im1 = axes[1][i].imshow(phase, extent=extent, cmap='twilight', origin='lower', interpolation='nearest')
+            axes[1][i].set(title=f'phase at z = {z:.2f}', xlabel='x', ylabel='y')
+            plt.colorbar(im1, ax=axes[1][i])
 
-            if data[1]:
-                # 绘制momentum space 
-                (U_k, kx, ky) = data[1]
-                intensity_k = np.abs(U_k) ** 2
-                phase_k = np.angle(U_k)
+            if len(data) == 2:
+                U_k, kx, ky = data[1]
+                intensity_k, phase_k = np.abs(U_k) ** 2, np.angle(U_k)
                 extent_k = [kx.min(), kx.max(), ky.min(), ky.max()]
 
-                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='inferno', origin='lower')
-                axes[2][i].set_title(f'momentum space intensity at z = {z:.2f}')
-                axes[2][i].set_xlabel('$k_x$ (rad/μm)')
-                axes[2][i].set_ylabel('$k_y$ (rad/μm)')
-                # plt.colorbar(im2, ax=axes[2][i])
+                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='inferno', origin='lower',
+                                        interpolation='nearest')
+                axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}', xlabel='$k_x$ (rad/μm)',
+                               ylabel='$k_y$ (rad/μm)')
+                plt.colorbar(im2, ax=axes[2][i])
 
-                im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight', origin='lower')
-                axes[3][i].set_title(f'momentum space phase at z = {z:.2f}')
-                axes[3][i].set_xlabel('$k_x$ (rad/μm)')
-                axes[3][i].set_ylabel('$k_y$ (rad/μm)')
-                # plt.colorbar(im3, ax=axes[3][i])
-            else:
-                # 如果没有momentum space 数据，隐藏额外的子图
-                axes[2][i].axis('off')
-                axes[3][i].axis('off')
+                im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight', origin='lower',
+                                        interpolation='nearest')
+                axes[3][i].set(title=f'momentum space phase at z = {z:.2f}', xlabel='$k_x$ (rad/μm)',
+                               ylabel='$k_y$ (rad/μm)')
+                plt.colorbar(im3, ax=axes[3][i])
 
         plt.tight_layout()
         plt.savefig(f'{save_label}-cross_sections.png', dpi=1000)
@@ -125,7 +95,8 @@ class Plotter:
             plt.show()
         plt.close(fig)
 
-    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0, save_label='default'):
+    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0,
+                                  save_label='default'):
         """
         绘制纵截面光场的intensity和phase。
 
@@ -141,22 +112,17 @@ class Plotter:
             raise ValueError("direction必须是 'x' 或 'y'")
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 8))
-
-        # intensity图
-        im0 = axes[0].imshow(intensity, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
-                             aspect='auto', cmap='rainbow', origin='lower', interpolation='nearest', norm=SymLogNorm(linthresh=1/np.e, linscale=1))  # norm=LogNorm()
-        axes[0].set_title(f'longitudinal intensity at {direction} = {position}')
-        axes[0].set_xlabel('z')
         xlabel = 'y' if direction == 'x' else 'x'
-        axes[0].set_ylabel(xlabel)
+
+        im0 = axes[0].imshow(intensity, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
+                             aspect='auto', cmap='rainbow', origin='lower', interpolation='nearest',
+                             norm=SymLogNorm(linthresh=1 / np.e, linscale=1))
+        axes[0].set(title=f'longitudinal intensity at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im0, ax=axes[0])
 
-        # phase图
         im1 = axes[1].imshow(phase, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
                              aspect='auto', cmap='twilight', origin='lower', interpolation='nearest')
-        axes[1].set_title(f'longitudinal phase at {direction} = {position}')
-        axes[1].set_xlabel('z')
-        axes[1].set_ylabel(xlabel)
+        axes[1].set(title=f'longitudinal phase at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im1, ax=axes[1])
 
         plt.tight_layout()
