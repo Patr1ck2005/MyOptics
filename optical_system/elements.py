@@ -3,6 +3,7 @@
 import cupy as cp
 from utils.constants import PI
 
+
 class OpticalElement:
     def __init__(self, z_position):
         """
@@ -28,6 +29,7 @@ class OpticalElement:
         """
         raise NotImplementedError("每个光学元件必须实现apply方法")
 
+
 class Lens(OpticalElement):
     def __init__(self, z_position, focal_length):
         super().__init__(z_position)
@@ -50,6 +52,7 @@ class Lens(OpticalElement):
         k = 2 * PI / wavelength
         phase = cp.exp(-1j * k / (2 * self.focal_length) * (X**2 + Y**2))
         return U * phase
+
 
 class PhasePlate(OpticalElement):
     def __init__(self, z_position, phase_function):
@@ -117,3 +120,39 @@ class MomentumSpacePhasePlate(OpticalElement):
         U_modified = cp.fft.ifft2(U_k_modified)
 
         return U_modified
+
+
+class Grating(OpticalElement):
+    def __init__(self, z_position, period, amplitude):
+        """
+        初始化光栅。
+
+        参数:
+        z_position (float): 光栅在z轴上的位置。
+        period (float): 光栅的周期。
+        amplitude (float): 光栅的相位调制幅度。
+        """
+        super().__init__(z_position)
+        self.period = period
+        self.amplitude = amplitude
+
+    def apply(self, U, x, y, wavelength):
+        """
+        光栅的相位调制。
+
+        参数:
+        U (ndarray): 输入光场。
+        x (ndarray): x轴坐标。
+        y (ndarray): y轴坐标。
+        wavelength (float): 波长。
+
+        返回:
+        ndarray: 处理后的光场。
+        """
+        # 创建y方向的相位调制
+        _, Y = cp.meshgrid(x, y)
+        phase = cp.exp(1j * self.amplitude * cp.sin(2 * PI * Y / self.period))
+
+        # 应用相位调制
+        return U * phase
+

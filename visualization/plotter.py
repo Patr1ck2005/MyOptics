@@ -51,7 +51,7 @@ class Plotter:
         logging.info("Calculated dynamic DPI: %d", dpi)
         return int(dpi)
 
-    def plot_field(self, U, x_coords, y_coords, title="radical field"):
+    def plot_field(self, U, x_coords, y_coords, title="radical field", show=False):
         """
         绘制光场的intensity和phase。
 
@@ -74,7 +74,9 @@ class Plotter:
 
         plt.suptitle(title)
         plt.tight_layout()
-        plt.show()
+        if show:
+            plt.show()
+        plt.savefig(f'./img/{title.replace(" ", "_")}.png', dpi=self.max_dpi)
 
     def plot_cross_sections(self, cross_sections, save_label='default', show=False):
         """
