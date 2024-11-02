@@ -34,7 +34,7 @@ class OpticalSystem:
         self.element_positions = []
         self.sorted = False
 
-        logging.info("OpticalSystem initialized with wavelength=%.2e", wavelength)
+        logging.info("OpticalSystem initialized with wavelength=%.2e\n", wavelength)
 
     def add_element(self, element):
         """
@@ -62,7 +62,7 @@ class OpticalSystem:
                 self.element_positions = []
                 self.elements = []
             self.sorted = True
-            logging.info("Optical elements sorted based on z_position")
+            logging.info("Optical elements sorted based on z_position\n")
 
     def propagate_to_cross_sections(self, z_positions,
                                     return_momentum_space_spectrum=False,
@@ -126,7 +126,7 @@ class OpticalSystem:
                 results[z] = ((cp.asnumpy(current_U.copy()), np.array(x.get()), np.array(y.get())), )
 
         end_time = time.time()
-        logging.info("Propagation to cross sections completed in %.2f seconds", end_time - start_time)
+        logging.info("Propagation to cross sections completed in %.2f seconds\n", end_time - start_time)
         return results
 
     def propagate_to_longitudinal_section(self, direction='x', position=0.0, num_z=500, z_max=100,
@@ -212,6 +212,6 @@ class OpticalSystem:
             phase[:, i] = cp.asnumpy(cp.angle(U_longitudinal_segment))
 
         end_time = time.time()
-        logging.info("Propagation to longitudinal section completed in %.2f seconds", end_time - start_time)
+        logging.info("Propagation to longitudinal section completed in %.2f seconds\n", end_time - start_time)
 
         return coord_axis_np, z_coords, intensity, phase

@@ -133,7 +133,7 @@ class Plotter:
         if show:
             plt.show()
         plt.close(fig)
-        logging.info("Cross-section plots saved as %s-cross_sections.png", save_label)
+        logging.info("Cross-section plots saved as %s-cross_sections.png\n", save_label)
 
     def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0, save_label='default', show=False):
         """
@@ -171,4 +171,4 @@ class Plotter:
         if show:
             plt.show()
         plt.close(fig)
-        logging.info("Longitudinal section plot saved as %s-longitudinal_section.png", save_label)
+        logging.info("Longitudinal section plot saved as %s-longitudinal_section.png\n", save_label)
