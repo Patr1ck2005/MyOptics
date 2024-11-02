@@ -44,7 +44,7 @@ if plot_cross_sections:
                                                      return_momentum_space_spectrum=True,
                                                      propagation_mode='Fresnel')  # Rigorous | Rigorous
     # Plot
-    plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=False)
+    plotter.plot_cross_sections(cross_sections, save_label='test', show=False)
 
 # another visualization mode
 if plot_longitudinal_section:  # independently of cross_sections
@@ -57,4 +57,4 @@ if plot_longitudinal_section:  # independently of cross_sections
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
 
     # Plot
-    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test-longitudinal_section', show=False)
+    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test', show=False)

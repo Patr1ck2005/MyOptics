@@ -78,7 +78,7 @@ class PhasePlate(OpticalElement):
 
 
 class MomentumSpacePhasePlate(OpticalElement):
-    def __init__(self, z_position, phase_function_k):
+    def __init__(self, z_position, phase_function):
         """
         初始化动量空间的相位板。
 
@@ -87,7 +87,7 @@ class MomentumSpacePhasePlate(OpticalElement):
         phase_function_k (function): 一个接受 kx 和 ky 的函数，定义了动量空间的相位调制。
         """
         super().__init__(z_position)
-        self.phase_function_k = phase_function_k
+        self.phase_function = phase_function
 
     def apply(self, U, x, y, wavelength):
         """
@@ -113,7 +113,7 @@ class MomentumSpacePhasePlate(OpticalElement):
         U_k = cp.fft.fft2(U)
 
         # 应用动量空间相位调制
-        phase_factor_k = self.phase_function_k(KX, KY)
+        phase_factor_k = self.phase_function(KX, KY)
         U_k_modified = U_k * phase_factor_k
 
         # 返回到实空间 (逆傅里叶变换)
