@@ -57,7 +57,7 @@ def main():
     # 例如，沿x方向，在x=0的位置
     direction = 'x'
     position = 0.0
-    num_z = 100
+    num_z = 128*2
     z_max = 3+4*f
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
         direction=direction,

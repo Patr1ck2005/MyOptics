@@ -48,7 +48,7 @@ if plot_longitudinal_section:  # independently of cross_sections
     coord_axis, z_coords, intensity, phase = (
         optical_system.propagate_to_longitudinal_section(direction='x',
                                                          position=0.0,
-                                                         num_z=100,
+                                                         num_z=1024,
                                                          z_max=4 * f + 1,
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
 

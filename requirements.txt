@@ -1,5 +1,5 @@
 scipy
 numpy
 matplotlib
-
+tqdm
 cupy-cuda12x
