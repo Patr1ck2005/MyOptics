@@ -66,7 +66,7 @@ class Plotter:
         extent = [x_coords.min(), x_coords.max(), y_coords.min(), y_coords.max()]
 
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-        for ax, data, cmap, label in zip(axes, [intensity, phase], ['inferno', 'twilight'], ['intensity', 'phase']):
+        for ax, data, cmap, label in zip(axes, [intensity, phase], ['rainbow', 'twilight'], ['intensity', 'phase']):
             im = ax.imshow(data, extent=extent, cmap=cmap, origin='lower', interpolation='nearest')
             ax.set(title=label, xlabel='x', ylabel='y')
             plt.colorbar(im, ax=ax)
@@ -103,7 +103,7 @@ class Plotter:
             intensity, phase = np.abs(U) ** 2, np.angle(U)
             extent = [x.min(), x.max(), y.min(), y.max()]
 
-            im0 = axes[0][i].imshow(intensity, extent=extent, cmap='inferno', origin='lower', interpolation='nearest')
+            im0 = axes[0][i].imshow(intensity, extent=extent, cmap='rainbow', origin='lower', interpolation='nearest')
             axes[0][i].set(title=f'intensity at z = {z:.2f}', xlabel='x', ylabel='y')
             plt.colorbar(im0, ax=axes[0][i])
 
@@ -117,7 +117,7 @@ class Plotter:
                 intensity_k, phase_k = np.abs(U_k) ** 2, np.angle(U_k)
                 extent_k = [kx.min(), kx.max(), ky.min(), ky.max()]
 
-                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='inferno', origin='lower', interpolation='nearest')
+                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='rainbow', origin='lower', interpolation='nearest')
                 axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel='$k_y$ (rad/μm)')
                 plt.colorbar(im2, ax=axes[2][i])
 
