@@ -9,19 +9,11 @@ from utils.constants import PI
 def main():
     # 定义仿真参数
     wavelength = 0.8  # 单位：微米
-    theta = np.deg2rad(0.68)
+    theta = np.deg2rad(12)
     w_0 = wavelength/theta/PI
-    # f = 5*w_0
-    # sim_size = 50*f*np.tan(np.deg2rad(12))  # 50 10 5
-    # f = 50*w_0
-    # sim_size = 10*f*np.tan(np.deg2rad(12))  # 50 10 5
-    # f = 500*w_0
-    # sim_size = 5*f*np.tan(np.deg2rad(12))  # 50 10 5
-    # f = 5000*w_0
-    # sim_size = 2*f*np.tan(np.deg2rad(12))  # 50 10 5
     z_0 = PI*w_0**2/wavelength
-    d = 1*z_0
-    sim_size = 30*d*np.tan(theta)  # 50 10 5
+    d = 20*z_0
+    sim_size = 20*d*np.tan(theta)
     mesh = 1024*4+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
@@ -34,18 +26,18 @@ def main():
     optical_system = OpticalSystem(wavelength, x, y, initial_field)
 
     # # 添加光学元件
-    # optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
-    optical_system.add_element(PhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 4 * np.arctan2(Y, X))))
+    optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
+    # optical_system.add_element(PhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
     # optical_system.add_element(Lens(z_position=f, focal_length=f/2))
 
     # save_label = 'mystructer-Fresnel'
-    save_label = 'q_plate-Rigorous'
+    save_label = 'momentum_plate-Rigorous'
 
     # 创建绘图器
     plotter = Plotter(x, y)
 
     # 计算并绘制横截面
-    cross_z_positions = [0, 0.1*z_0, 0.5*z_0, d]  # 需要计算的z位置
+    cross_z_positions = [0, 0.1*z_0, 0.5*z_0, d/2, d]  # 需要计算的z位置
     cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions,
                                                                 propagation_mode='Rigorous',
                                                                 return_momentum_space_spectrum=True)
