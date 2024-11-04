@@ -31,13 +31,23 @@ class OpticalElement:
 
 
 class Lens(OpticalElement):
-    def __init__(self, z_position, focal_length):
+
+    def __init__(self, z_position, focal_length, NA=0):
+        """
+        初始化考虑数值孔径(NA)的透镜。
+
+        参数:
+        z_position (float): 透镜在z轴上的位置。
+        focal_length (float): 透镜的焦距。
+        NA (float): 数值孔径。
+        """
         super().__init__(z_position)
         self.focal_length = focal_length
+        self.NA = NA
 
     def apply(self, U, x, y, wavelength):
         """
-        透镜的相位调制。
+        透镜的相位调制，考虑数值孔径的影响。
 
         参数:
         U (ndarray): 输入光场。
@@ -50,8 +60,16 @@ class Lens(OpticalElement):
         """
         X, Y = cp.meshgrid(x, y)
         k = 2 * PI / wavelength
-        phase = cp.exp(-1j * k / (2 * self.focal_length) * (X**2 + Y**2))
-        return U * phase
+        phase = cp.exp(-1j * k / (2 * self.focal_length) * (X ** 2 + Y ** 2))
+
+        if self.NA == 0:
+            return U * phase
+        # Calculate the spatial cutoff frequency based on NA
+        max_angle = cp.arcsin(self.NA)  # Max angle given by NA
+        max_radius = self.focal_length * cp.tan(max_angle)  # Corresponding radius in focal plane
+        NA_mask = cp.sqrt(X ** 2 + Y ** 2) <= max_radius  # Mask for NA limitation
+
+        return U * phase * NA_mask
 
 
 class PhasePlate(OpticalElement):
@@ -155,4 +173,35 @@ class Grating(OpticalElement):
 
         # 应用相位调制
         return U * phase
+
+
+class Aperture(OpticalElement):
+    def __init__(self, z_position, radius):
+        """
+        初始化光阑。
+
+        参数:
+        z_position (float): 光阑在z轴上的位置。
+        radius (float): 光阑的半径。
+        """
+        super().__init__(z_position)
+        self.radius = radius
+
+    def apply(self, U, x, y, wavelength):
+        """
+        应用光阑对光场的影响。
+
+        参数:
+        U (ndarray): 输入光场。
+        x (ndarray): x轴坐标。
+        y (ndarray): y轴坐标。
+        wavelength (float): 波长。
+
+        返回:
+        ndarray: 处理后的光场。
+        """
+        X, Y = cp.meshgrid(x, y)
+        aperture_mask = cp.sqrt(X**2 + Y**2) <= self.radius
+        return U * aperture_mask
+
 
