@@ -1,10 +1,11 @@
 # optical_system/elements.py
+from abc import abstractmethod, ABC
 
 import cupy as cp
 from utils.constants import PI
 
 
-class OpticalElement:
+class OpticalElement(ABC):
     def __init__(self, z_position):
         """
         初始化光学元件。
@@ -14,6 +15,17 @@ class OpticalElement:
         """
         self.z_position = z_position
 
+    @property
+    def config(self):
+        """
+        获取光学元件的配置信息。
+
+        返回:
+        dict: 包含对象所有属性的字典。
+        """
+        return self.__dict__
+
+    @abstractmethod
     def apply(self, U, x, y, wavelength):
         """
         应用光学元件对光场的影响。
@@ -27,7 +39,7 @@ class OpticalElement:
         返回:
         ndarray: 处理后的光场。
         """
-        raise NotImplementedError("每个光学元件必须实现apply方法")
+        pass
 
 
 class Lens(OpticalElement):

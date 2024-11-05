@@ -27,25 +27,28 @@ f1 = 4*1e3
 d1 = 500*1e3
 f2 = 50*1e3
 f3 = f2/10
-# f2 = 500
-# |--f1--|ObjectLens|--f1--|------------d1----------------|----f2----Lens1----f2----|----f2----Lens2----f2----|--------------------------------------
-optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+d2 = 10*1e3
+
+w_m = f1*np.tan(theta)
+# |--f1--|ObjectLens|--f1--|------------d1----------------|----f2----|Lens1|----f2----|--f3--|Lens2|--f3--|-----d2---------------------------------
+# optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
 optical_system.add_element(Lens(z_position=f1, focal_length=f1, NA=0.42))
-optical_system.add_element(Lens(z_position=2*f1+d1+f2, focal_length=f2))
-optical_system.add_element(Lens(z_position=2*f1+d1+2*f2+f3, focal_length=f3))
+optical_system.add_element(Lens(z_position=2*f1+d1+f2, focal_length=f2, NA=0.3))
+optical_system.add_element(Lens(z_position=2*f1+d1+2*f2+f3, focal_length=f3, NA=0.3))
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Create plotter
 plotter = Plotter(x, y)
 
 # ----------------------------------------------------------------------------------------------------------------------
+z_max = f1*2+d1+f2*2+f3*2+d2
 # Compute and Visualization
-plot_cross_sections = True
+plot_cross_sections = False
 plot_longitudinal_section = True
 
 if plot_cross_sections:
     # Compute
-    cross_z_positions = [0, 2*f1, 2*f3+2*f2+2*f1+d1]
+    cross_z_positions = [0, 2*f1, 2*f3+2*f2+2*f1+d1, z_max]
     cross_sections \
         = optical_system.propagate_to_cross_sections(cross_z_positions,
                                                      return_momentum_space_spectrum=True,
@@ -59,9 +62,12 @@ if plot_longitudinal_section:  # independently of cross_sections
     coord_axis, z_coords, intensity, phase = (
         optical_system.propagate_to_longitudinal_section(direction='x',
                                                          position=0.0,
-                                                         num_z=512,
-                                                         z_max=f1*2+d1+f2*2+f3*2,
+                                                         # num_z=512,
+                                                         num_z=512*8,
+                                                         z_max=z_max,
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
 
     # Plot
-    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label=f'{project_name}', show=False)
+    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
+                                      save_label=f'{project_name}',
+                                      show=True, norm_vmin=(1/np.e)**(w_m/w_0))

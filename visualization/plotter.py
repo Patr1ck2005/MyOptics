@@ -4,7 +4,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import SymLogNorm
+from matplotlib.colors import SymLogNorm, LogNorm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -137,7 +137,14 @@ class Plotter:
         plt.close(fig)
         logging.info("Cross-section plots saved as %s-cross_sections.png\n", save_label)
 
-    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase, direction='x', position=0.0, save_label='default', show=False):
+    def plot_longitudinal_section(self, coord_axis, z_coords, intensity, phase,
+                                  direction='x',
+                                  position=0.0,
+                                  save_label='default',
+                                  show=False,
+                                  norm_vmin=1/np.e,
+                                  figsize: None | tuple = None,
+                                  dpi=None):
         """
         绘制纵截面光场的intensity和phase。
 
@@ -154,12 +161,17 @@ class Plotter:
             logging.error("Invalid direction: %s. Must be 'x' or 'y'", direction)
             raise ValueError("direction必须是 'x' 或 'y'")
 
-        fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+        if figsize is None:
+            figsize = (10, 8)
+        fig, axes = plt.subplots(2, 1, figsize=figsize)
         xlabel = 'y' if direction == 'x' else 'x'
 
+        intensity_peak = np.max(intensity)
         im0 = axes[0].imshow(intensity, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
                              aspect='auto', cmap='rainbow', origin='lower', interpolation='nearest',
-                             norm=SymLogNorm(linthresh=1 / np.e, linscale=1))
+                             # norm=SymLogNorm(linthresh=norm_vmin*intensity_peak, linscale=1)
+                             norm=LogNorm(vmin=norm_vmin*intensity_peak)
+                             )
         axes[0].set(title=f'longitudinal intensity at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im0, ax=axes[0])
 
@@ -169,7 +181,8 @@ class Plotter:
         plt.colorbar(im1, ax=axes[1])
 
         plt.tight_layout()
-        plt.savefig(f'./img/{save_label}-longitudinal_section.png', dpi=self.calculate_dynamic_dpi(intensity.shape, (10, 8)))
+        save_dpi = dpi if dpi is not None else self.calculate_dynamic_dpi(intensity.shape, figsize)
+        plt.savefig(f'./img/{save_label}-longitudinal_section.png', dpi=save_dpi)
         if show:
             plt.show()
         plt.close(fig)

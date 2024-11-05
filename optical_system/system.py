@@ -30,11 +30,35 @@ class OpticalSystem:
         self.x = cp.array(x)  # 转换为CuPy数组
         self.y = cp.array(y)  # 转换为CuPy数组
         self.U = cp.array(initial_field)  # 转换为CuPy数组
-        self.elements = []
+        self.dx = x[1] - x[0]
+        self.dy = y[1] - y[0]
+        self.Lx = x[-1] - x[0]
+        self.Ly = y[-1] - y[0]
+        self.U = self.U / cp.sqrt(cp.sum(cp.abs(self.U) ** 2))  # 归一化
+        self.elements: list[OpticalElement] = []
         self.element_positions = []
         self.sorted = False
+        # dynamic sim configs
+        self.propagation_mode = 'Rigorous'
 
         logging.info("OpticalSystem initialized with wavelength=%.2e\n", wavelength)
+
+    @property
+    def last_sim_config(self):
+        return {
+            'dx': self.dx,
+            'dy': self.dy,
+            'Lx': self.Lx,
+            'Ly': self.Ly,
+            'x': self.x,
+            'y': self.y,
+            'U': self.U,
+            'wavelength': self.wavelength,
+            'propagation_mode': self.propagation_mode,
+            'elements': [element.config for element in self.elements],
+            'element_positions': self.element_positions,
+            'sorted': self.sorted,
+        }
 
     def add_element(self, element):
         """
