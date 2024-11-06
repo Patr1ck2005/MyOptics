@@ -8,16 +8,17 @@ project_name = 'vortex_beam-exp_system'
 
 # Define parameters
 f1 = 4*1e3
-d1 = 10*1e3
-f2 = 200*1e3
-f3 = f2/10
+d1 = 1000*1e3
+f2 = 300*1e3
+d3 = 100*1e3
+f3 = 100*1e3
 d2 = 0*1e3
 
 theta = np.deg2rad(12)
 w_ol = f1 * np.tan(theta)
-sim_size = 2 * w_ol + 1
+sim_size = 12 * w_ol + 1
 wavelength = 1.5  # Wavelength in um
-mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
+mesh = 1024*10+1  # Mesh size ( +1 to maintain central symmetry)
 w_0 = wavelength/PI/theta  # Beam waist
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
@@ -30,18 +31,19 @@ initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
-# |--f1--|ObjectLens|--f1--|------------d1----------------|----f2----|Lens1|----f2----|--f3--|Lens2|--f3--|-----d2---------------------------------
-# optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
-optical_system.add_element(ObjectLens(z_position=f1, focal_length=f1, NA=0.40))
-optical_system.add_element(Lens(z_position=2*f1+d1+f2, focal_length=f2))
-optical_system.add_element(Lens(z_position=2*f1+d1+2*f2+f3, focal_length=f3))
+# |--f1--|ObjectLens|--f1--|------------d1----------------|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|-----d2---------------------------------
+optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+optical_system.add_element(obj_lens := ObjectLens(z_position=f1, focal_length=f1, NA=0.40))
+optical_system.add_element(lens3 := Lens(z_position=obj_lens.z_position+f1+d1+f2, focal_length=f2))
+lens_focus_position = 1.695e6
+optical_system.add_element(lens4 := Lens(z_position=lens_focus_position+d3, focal_length=f3))
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Create plotter
 plotter = Plotter(x, y)
 
 # ----------------------------------------------------------------------------------------------------------------------
-z_max = f1*2+d1+f2*2+f3*2+d2
+z_max = lens4.z_position+d3
 # Compute and Visualization
 plot_cross_sections = True
 plot_longitudinal_section = True
