@@ -5,9 +5,13 @@ from visualization.plotter import Plotter
 
 # Define parameters
 wavelength = 0.5  # Wavelength in micrometers
-sim_size = 256  # Simulation size
-mesh = 2048+1  # Mesh size ( +1 to maintain central symmetry)
-w_0 = 5  # Beam waist
+theta = np.deg2rad(2)
+w_0 = wavelength/PI/theta  # Beam waist
+f1 = 100
+f2 = 3000
+w_oj = f1*np.tan(45)
+sim_size = 10*w_oj  # Simulation size
+mesh = 1024*10+1  # Mesh size ( +1 to maintain central symmetry)
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
 
@@ -18,12 +22,9 @@ initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
 # ----------------------------------------------------------------------------------------------------------------------
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
-# optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
-f1 = 100
-f2 = 300
 
 optical_system.add_element(Grating(z_position=0, period=1, amplitude=1))
-optical_system.add_element(Lens(z_position=f1, focal_length=f1))
+optical_system.add_element(ObjectLens(z_position=f1, focal_length=f1))
 optical_system.add_element(Lens(z_position=f2+2*f1, focal_length=f2))
 optical_system.add_element(Lens(z_position=f2*2+2*f1+f2, focal_length=f2))
 
@@ -57,4 +58,7 @@ if plot_longitudinal_section:  # independently of cross_sections
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
 
     # Plot
-    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test', show=False)
+    plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
+                                      save_label='test',
+                                      show=True,
+                                      norm_vmin=(1/np.e)/(w_oj/w_0)**2)
