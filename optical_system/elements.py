@@ -84,6 +84,52 @@ class Lens(OpticalElement):
         return U * phase * NA_mask
 
 
+class ObjectLens(OpticalElement):
+
+    def __init__(self, z_position, focal_length, NA=0):
+        """
+        初始化非近轴条件下的理想物镜。
+
+        参数:
+        z_position (float): 物镜在z轴上的位置。
+        focal_length (float): 物镜的焦距。
+        NA (float): 数值孔径。
+        """
+        super().__init__(z_position)
+        self.focal_length = focal_length
+        self.NA = NA
+
+    def apply(self, U, x, y, wavelength):
+        """
+        应用非近轴相位调制，实现高NA物镜的仿真。
+
+        参数:
+        U (ndarray): 输入光场。
+        x (ndarray): x轴坐标。
+        y (ndarray): y轴坐标。
+        wavelength (float): 波长。
+
+        返回:
+        ndarray: 处理后的光场。
+        """
+        X, Y = cp.meshgrid(x, y)
+        k = 2 * PI / wavelength
+
+        # 非近轴相位函数
+        r_squared = X ** 2 + Y ** 2
+        phase = cp.exp(-1j * k * (cp.sqrt(self.focal_length ** 2 + r_squared) - self.focal_length))
+
+        if self.NA == 0:
+            return U * phase
+
+        # 数值孔径的限制
+        max_angle = cp.arcsin(self.NA)  # 最大入射角，由NA确定
+        max_radius = self.focal_length * cp.tan(max_angle)  # 焦平面中的最大半径
+        NA_mask = cp.sqrt(r_squared) <= max_radius  # 应用NA的限制
+
+        return U * phase * NA_mask
+
+
 class PhasePlate(OpticalElement):
     def __init__(self, z_position, phase_function):
         super().__init__(z_position)

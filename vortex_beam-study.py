@@ -2,7 +2,7 @@
 
 import numpy as np
 from optical_system.system import OpticalSystem
-from optical_system.elements import Lens, PhasePlate, MomentumSpacePhasePlate
+from optical_system.elements import *
 from visualization.plotter import Plotter
 from utils.constants import PI
 
@@ -19,9 +19,12 @@ def main():
     # sim_size = 5*f*np.tan(np.deg2rad(12))  # 50 10 5
     # f = 5000*w_0
     # sim_size = 2*f*np.tan(np.deg2rad(12))  # 50 10 5
-    f = 2e3
-    sim_size = 2*f*np.tan(np.deg2rad(12))  # 50 10 5
-    mesh = 1024*4+1
+    f = 1e3
+    w_ol = f*np.tan(np.deg2rad(12))
+    z_R = PI*w_ol**2/wavelength
+    print(z_R)
+    sim_size = 2*w_ol+1  # 50 10 5
+    mesh = 1024*6+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
     X, Y = np.meshgrid(x, y)
@@ -33,17 +36,18 @@ def main():
     optical_system = OpticalSystem(wavelength, x, y, initial_field)
 
     # # 添加光学元件
-    optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
-    optical_system.add_element(Lens(z_position=f, focal_length=f/2))
+    # optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
+    optical_system.add_element(ObjectLens(z_position=f, focal_length=f))
 
-    # save_label = 'mystructer-Fresnel'
-    save_label = 'mystructer-Rigorous'
+    # save_label = 'OL_study-Fresnel'
+    save_label = 'OL_study-4mm-Rigorous'
 
     # 创建绘图器
     plotter = Plotter(x, y)
 
     # 计算并绘制横截面
-    cross_z_positions = [0, 0.5*f, 2*f]  # 需要计算的z位置
+    cross_z_positions = [0, 0.99*f, f, 2*f, 3*f]  # 需要计算的z位置
+    # cross_z_positions = [0, 5*f]  # 需要计算的z位置
     cross_sections = optical_system.propagate_to_cross_sections(cross_z_positions,
                                                                 propagation_mode='Rigorous',
                                                                 return_momentum_space_spectrum=True)
@@ -56,7 +60,7 @@ def main():
     direction = 'x'
     position = 0.0
     num_z = 128*2
-    z_max = 2*f
+    z_max = z_R
     coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
         direction=direction,
         position=position,
@@ -68,7 +72,9 @@ def main():
                                       direction=direction,
                                       position=position,
                                       save_label=save_label,
-                                      show=False)
+                                      show=False,
+                                      norm_vmin=(1/np.e)/(w_ol/w_0)**2
+                                      )
 
 
 if __name__ == "__main__":
