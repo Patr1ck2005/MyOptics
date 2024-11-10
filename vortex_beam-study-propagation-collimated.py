@@ -14,7 +14,7 @@ def main():
     z_0 = PI*w_0**2/wavelength
     d = 0.5*z_0
     sim_size = 30*d*np.tan(theta)
-    mesh = 1024*4+1
+    mesh = 1024*10+1
     x = np.linspace(-sim_size, sim_size, mesh)
     y = np.linspace(-sim_size, sim_size, mesh)
     X, Y = np.meshgrid(x, y)
