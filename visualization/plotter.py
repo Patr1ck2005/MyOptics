@@ -169,8 +169,8 @@ class Plotter:
         intensity_peak = np.max(intensity)
         im0 = axes[0].imshow(intensity, extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
                              aspect='auto', cmap='rainbow', origin='lower', interpolation='nearest',
-                             # norm=SymLogNorm(linthresh=norm_vmin*intensity_peak, linscale=1)
-                             norm=LogNorm(vmin=norm_vmin*intensity_peak)
+                             norm=SymLogNorm(linthresh=norm_vmin*intensity_peak, linscale=1)
+                             # norm=LogNorm(vmin=norm_vmin*intensity_peak)
                              )
         axes[0].set(title=f'longitudinal intensity at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im0, ax=axes[0])

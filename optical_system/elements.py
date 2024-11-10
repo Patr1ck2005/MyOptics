@@ -227,10 +227,10 @@ class Grating(OpticalElement):
         """
         # 创建y方向的相位调制
         _, Y = cp.meshgrid(x, y)
-        phase = cp.exp(1j * self.amplitude * cp.sin(2 * PI * Y / self.period))
+        phase_factor = cp.exp(1j * self.amplitude * cp.sin(2 * PI * Y / self.period))
 
         # 应用相位调制
-        return U * phase
+        return U * phase_factor
 
 
 class Aperture(OpticalElement):
@@ -261,5 +261,45 @@ class Aperture(OpticalElement):
         X, Y = cp.meshgrid(x, y)
         aperture_mask = cp.sqrt(X**2 + Y**2) <= self.radius
         return U * aperture_mask
+
+
+class BlazedGrating(OpticalElement):
+    def __init__(self, z_position, blaze_angle, period):
+        """
+        初始化闪耀光栅。
+
+        参数:
+        z_position (float): 光栅在z轴上的位置。
+        blaze_angle (float): 闪耀角度（以弧度为单位）。
+        period (float): 光栅的周期。
+        """
+        super().__init__(z_position)
+        self.blaze_angle = blaze_angle
+        self.period = period
+
+    def apply(self, U, x, y, wavelength):
+        """
+        闪耀光栅的周期性相位调制。
+
+        参数:
+        U (ndarray): 输入光场。
+        x (ndarray): x轴坐标。
+        y (ndarray): y轴坐标。
+        wavelength (float): 波长。
+
+        返回:
+        ndarray: 处理后的光场。
+        """
+        X, Y = cp.meshgrid(x, y)
+        k = 2 * PI / wavelength
+
+        # 计算相位调制
+        phase = k * (cp.tan(self.blaze_angle)*(Y % self.period))
+        # phase = k * self.period * (cp.sin(self.blaze_angle*Y))
+
+        # 应用相位因子
+        phase_factor = cp.exp(1j * phase)
+
+        return U * phase_factor
 
 
