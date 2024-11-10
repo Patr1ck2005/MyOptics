@@ -11,8 +11,8 @@ w_f = 2*1e3  # Beam waist
 focal_angle = np.arctan(w_f/f1)
 w_0 = wavelength/PI/focal_angle
 
-sim_size = w_f*10  # Simulation size
-mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
+sim_size = w_f*4  # Simulation size
+mesh = 1024*6+1  # Mesh size ( +1 to maintain central symmetry)
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
 
