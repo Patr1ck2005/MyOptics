@@ -198,7 +198,7 @@ class MomentumSpacePhasePlate(OpticalElement):
         return U_modified
 
 
-class Grating(OpticalElement):
+class PhaseGrating(OpticalElement):
     def __init__(self, z_position, period, amplitude):
         """
         初始化光栅。
