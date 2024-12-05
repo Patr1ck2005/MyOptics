@@ -78,7 +78,7 @@ class Plotter:
             plt.show()
         plt.savefig(f'./img/{title.replace(" ", "_")}.png', dpi=self.max_dpi)
 
-    def plot_cross_sections(self, cross_sections, save_label='default', show=False):
+    def plot_cross_sections(self, cross_sections, save_label='default', show=False, wavelength=1.00):
         """
         绘制多个z位置的横截面光场，包括空间域和momentum space 。
 
@@ -116,13 +116,21 @@ class Plotter:
                 logging.info("Including momentum space data for z=%.2f", z)
                 intensity_k, phase_k = np.abs(U_k) ** 2, np.angle(U_k)
                 extent_k = [kx.min(), kx.max(), ky.min(), ky.max()]
+                yticks = np.linspace(ky.min(), ky.max(), 10)
+                yticklabels = np.round(np.arcsin(yticks/(2*np.pi/wavelength))*180/np.pi, 1)
 
                 im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='rainbow', origin='lower', interpolation='nearest')
-                axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel='$k_y$ (rad/μm)')
+                axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel=r'angle (\deg)')
+                # 设置 y 轴的刻度和标签
+                axes[2][i].set_yticks(yticks)  # 设置刻度位置
+                axes[2][i].set_yticklabels(yticklabels)  # 设置刻度标签
                 plt.colorbar(im2, ax=axes[2][i])
 
                 im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight', origin='lower', interpolation='nearest')
-                axes[3][i].set(title=f'momentum space phase at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel='$k_y$ (rad/μm)')
+                axes[3][i].set(title=f'momentum space phase at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel=r'angle (\deg)')
+                # 设置 y 轴的刻度和标签
+                axes[2][i].set_yticks(yticks)  # 设置刻度位置
+                axes[2][i].set_yticklabels(yticklabels)  # 设置刻度标签
                 plt.colorbar(im3, ax=axes[3][i])
 
         plt.tight_layout()

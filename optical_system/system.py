@@ -125,7 +125,7 @@ class OpticalSystem:
                                                            propagation_mode=propagation_mode)
                 # 应用光学元件
                 logging.info("Applying optical element at z=%.2f", self.element_positions[element_index])
-                current_U = self.elements[element_index].apply(current_U, x, y, wavelength)
+                current_U = self.elements[element_index].apply(U=current_U, x=x, y=y, wavelength=wavelength)
                 current_z = self.element_positions[element_index]
                 element_index += 1
 
@@ -213,7 +213,7 @@ class OpticalSystem:
                 # 应用光学元件
                 logging.info("Applying optical element at z=%.2f", z_elem)
                 element = self.elements[element_index]
-                U_cross = element.apply(U_cross, x, y, wavelength)
+                U_cross = element.apply(U=U_cross, x=x, y=y, wavelength=wavelength)
                 # 处理下一个元件
                 element_index += 1
 
