@@ -156,5 +156,5 @@ if plot_longitudinal_section:  # independently of cross_sections
 
 ## License 📜
 
-This project is licensed under the MIT License.
+This project has no license.
 
