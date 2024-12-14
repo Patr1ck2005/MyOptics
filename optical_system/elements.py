@@ -2,6 +2,7 @@
 from abc import abstractmethod, ABC
 
 import cupy as cp
+
 from utils.constants import PI
 
 
@@ -44,7 +45,7 @@ class OpticalElement(ABC):
 
 class Lens(OpticalElement):
 
-    def __init__(self, z_position, focal_length, NA=0):
+    def __init__(self, z_position, focal_length, NA=0, D=None):
         """
         初始化考虑数值孔径(NA)的透镜。
 
@@ -55,7 +56,11 @@ class Lens(OpticalElement):
         """
         super().__init__(z_position)
         self.focal_length = focal_length
-        self.NA = NA
+        if D is not None:
+            self.NA = D/2/cp.sqrt((D/2)**2+self.focal_length**2)
+        else:
+            self.NA = NA
+        # self.D = D
 
     @property
     def back_position(self):
@@ -356,7 +361,7 @@ class BlazedGrating(OpticalElement):
 
 
 class Aperture(OpticalElement):
-    def __init__(self, z_position, radius):
+    def __init__(self, z_position, size):
         """
         初始化光阑基类。
 
@@ -365,7 +370,7 @@ class Aperture(OpticalElement):
         radius (float): 光阑的半径（或半边长）。
         """
         super().__init__(z_position)
-        self.radius = radius
+        self.size = size
 
     @abstractmethod
     def create_mask(self, X, Y):
@@ -400,6 +405,16 @@ class Aperture(OpticalElement):
 
 
 class CircularAperture(Aperture):
+    def __init__(self, z_position, radius):
+        """
+        初始化圆形光阑。
+
+        参数:
+        z_position (float): 光阑在z轴上的位置。
+        radius (float): 光阑的半径。
+        """
+        super().__init__(z_position=z_position, size=radius)
+
     def create_mask(self, X, Y):
         """
         创建圆形光阑的遮挡掩膜。
@@ -411,7 +426,7 @@ class CircularAperture(Aperture):
         返回:
         ndarray: 圆形遮挡掩膜。
         """
-        return cp.sqrt(X ** 2 + Y ** 2) <= self.radius
+        return cp.sqrt(X ** 2 + Y ** 2) <= self.size
 
 
 class SquareAperture(Aperture):
@@ -426,7 +441,7 @@ class SquareAperture(Aperture):
         返回:
         ndarray: 方形遮挡掩膜。
         """
-        return (cp.abs(X) <= self.radius) & (cp.abs(Y) <= self.radius)
+        return (cp.abs(X) <= self.size) & (cp.abs(Y) <= self.size)
 
 
 class EllipticalAperture(Aperture):

@@ -8,14 +8,14 @@ wavelength = 1.550  # Wavelength in micrometers
 f1 = 4*1e3
 f2 = 10*1e3
 f3 = f2/2
-w_0 = 200  # exp: 3000
+w_0 = 300  # exp: 3000
 initial_angle = wavelength/PI/w_0
 # w_f = 10  # Beam waist
 # focal_angle = np.arctan(w_f/f1)
 
-w_m = 400
+w_m = 4800
 # sim_size = w_m*40  # Simulation size
-sim_size = 4000  # Simulation size
+sim_size = 6000  # Simulation size
 mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
@@ -29,9 +29,9 @@ initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
 
-# |--f1--|ObjectLens|--f1--*sample*--f1--|ObjectLens|--f1--|----f2----|Lens1|----f2----|----f2----|Lens2|----f2----|
+# |--f1--|ObjectLens|--f1--|sample|--f1--|ObjectLens|--f1--|----f2----|Lens1|----f2----|----f2----|Lens2|----f2----|
 # optical_system.add_element(SinePhaseGrating(z_position=0, period=10, amplitude=1))
-optical_system.add_element(RectAmplitudeGrating(z_position=0, period=40, slit_width=20))
+optical_system.add_element(RectAmplitudeGrating(z_position=0, period=10, slit_width=10/2))
 optical_system.add_element(OL1 := ObjectLens(z_position=f1, focal_length=f1))
 # optical_system.add_element(PhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
 optical_system.add_element(MomentumSpacePhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
@@ -45,7 +45,7 @@ plotter = Plotter(x, y)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Compute and Visualization
-plot_cross_sections = True
+plot_cross_sections = False
 plot_longitudinal_section = True
 
 if plot_cross_sections:
@@ -64,7 +64,7 @@ if plot_longitudinal_section:  # independently of cross_sections
     coord_axis, z_coords, intensity, phase = (
         optical_system.propagate_to_longitudinal_section(direction='x',
                                                          position=0.0,
-                                                         num_z=128*1,
+                                                         num_z=128*5,
                                                          z_max=L2.z_position+f2,
                                                          # z_max=+2*f1+f2,
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
@@ -73,4 +73,4 @@ if plot_longitudinal_section:  # independently of cross_sections
     plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
                                       save_label='exp-vortex_array',
                                       show=False,
-                                      norm_vmin=(1/np.e)/(w_m/w_0)**2)
+                                      norm_vmin=(1/np.e**2)/(w_m/w_0)**2)
