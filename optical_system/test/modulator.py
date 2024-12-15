@@ -1,7 +1,7 @@
 import cupy as cp
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import RegularGridInterpolator, RectBivariateSpline
 
 from optical_system.elements import OpticalElement
 from utils.constants import PI
@@ -33,16 +33,27 @@ class MomentumSpaceModulator(OpticalElement):
 
         # 如果有给定的调制数组和对应动量坐标，则插值
         if self.modulation_array is not None and self.mod_kx is not None and self.mod_ky is not None:
+            # # 频域坐标变换
+            # KX = cp.fft.fftshift(KX)
+            # KY = cp.fft.fftshift(KY)
+
             mod_array_cpu = cp.asnumpy(self.modulation_array)
             mod_kx_cpu = cp.asnumpy(self.mod_kx)
             mod_ky_cpu = cp.asnumpy(self.mod_ky)
-            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu, bounds_error=False,
+            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu,
+                                             bounds_error=False,
+                                             method='cubic',
+                                             # method='linear',
                                              fill_value=1.0)
 
             points = cp.stack([KY.ravel(), KX.ravel()], axis=-1)
             points_cpu = cp.asnumpy(points)
             mod_values = interp(points_cpu).reshape(KY.shape)
-            return cp.asarray(mod_values)
+
+            # 频域坐标变换
+            mod_values = cp.asarray(mod_values)
+            # mod_values = cp.fft.ifftshift(mod_values)
+            return mod_values
 
         # 如果既没有函数也没有数组，则不做调制
         return cp.ones_like(KX)
@@ -60,7 +71,7 @@ class MomentumSpaceModulator(OpticalElement):
         plt.imshow(cp.abs(U).get())
         plt.show()
         # DEBUG
-        U_k_plot = cp.fft.ifftshift(U_k)
+        U_k_plot = cp.fft.fftshift(U_k)
         plt.imshow(cp.abs(U_k_plot).get())
         plt.show()
 
@@ -69,12 +80,12 @@ class MomentumSpaceModulator(OpticalElement):
         U_k_modified = U_k * mod_factor
 
         # DEBUG
-        mod_factor_plot = cp.fft.ifftshift(mod_factor)
+        mod_factor_plot = cp.fft.fftshift(mod_factor)
         plt.imshow((cp.abs(mod_factor_plot)**2).get(), cmap='hot', vmin=0, vmax=1)
         plt.colorbar()
         plt.show()
         # DEBUG
-        U_k_modified_plot = cp.fft.ifftshift(U_k_modified)
+        U_k_modified_plot = cp.fft.fftshift(U_k_modified)
         plt.imshow(cp.abs(U_k_modified_plot).get())
         plt.show()
 

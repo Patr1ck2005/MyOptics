@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
+from optical_system.specific_elements import MSPP
 from optical_system.system import OpticalSystem
 from optical_system.elements import *
 from visualization.plotter import Plotter
@@ -12,8 +14,8 @@ project_name = 'vortex_beam-exp_system'
 d0 = 25*1e3  # for aperture position
 D_measure = 1000e3*1
 f0 = 50*1e3
-# fol = 4e3*5
-fol = f0
+fol = 4e3*5
+# fol = f0
 f1 = 50*1e3
 d1 = 500*1e3*1
 f2 = 300*1e3
@@ -47,7 +49,7 @@ optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
 # A-----d1-----|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
 optical_system.add_element(obj_lens1 := ObjectLens(z_position=0+d1+fol, focal_length=fol, NA=0.42))
-# optical_system.add_element(MSPP(z_position=obj_lens1.z_position+1e3, topology_charge=2, wavelength=wavelength, inner_NA=0.02*3, outer_NA=0.2))
+optical_system.add_element(MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 # optical_system.add_element(obj_lens := Lens(z_position=lens0.back_position+d1, focal_length=f1, D=25.4*1e3))
 # optical_system.add_element(lens3 := Lens(z_position=obj_lens.z_position+f1+f2, focal_length=f2, D=25.4*1e3))
@@ -69,13 +71,17 @@ if plot_cross_sections:
     # Compute
     cross_z_positions = [0, obj_lens1.forw_position,
                          obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
-    # cross_z_positions = [lens0.back_position, lens0.back_position+0.3*d1, lens0.back_position+0.6*d1, lens0.back_position+1.0*d1]
     cross_sections \
         = optical_system.propagate_to_cross_sections(cross_z_positions,
                                                      return_momentum_space_spectrum=True,
                                                      propagation_mode='Rigorous')  # Fresnel | Rigorous
     # Plot
-    plotter.plot_cross_sections(cross_sections, save_label=f'{project_name}', show=False)
+    plotter.plot_cross_sections(cross_sections,
+                                save_label=f'{project_name}',
+                                show=False,
+                                cmap_for_spatial_intensity='grey',
+                                vmax_for_spatial_intensity=1e-7,
+                                )
 
 # another visualization mode
 if plot_longitudinal_section:  # independently of cross_sections

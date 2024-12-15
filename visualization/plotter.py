@@ -80,7 +80,15 @@ class Plotter:
             plt.show()
         plt.savefig(f'./img/{title.replace(" ", "_")}.png', dpi=self.max_dpi)
 
-    def plot_cross_sections(self, cross_sections, save_label='default', show=False):
+    def plot_cross_sections(
+            self,
+            cross_sections,
+            save_label='default',
+            show=False,
+            cmap_for_spatial_intensity='rainbow',
+            # cmap_for_spatial_phase='twilight',
+            vmax_for_spatial_intensity=None,
+    ):
         """
         绘制多个z位置的横截面光场，包括空间域和momentum space 。
 
@@ -88,6 +96,11 @@ class Plotter:
         cross_sections (dict): 包含z坐标为键，值为元组的字典。
                                - 如果 return_spectrum=False，元组为 (U, x, y)。
                                - 如果 return_spectrum=True，元组为 ((U, x, y), (U_k, kx, ky))。
+        save_label (str): 保存图像的标签前缀。
+        show (bool): 是否显示图像。
+        cmap_for_intensity (str): 空间域光场的颜色映射。
+        cmap_for_phase (str): 空间域相位图的颜色映射。
+        vmax_for_intensity (Optional[float]): 空间域光场的颜色映射最大值。如果为 None，则自适应。
         """
         logging.info("Starting plot_cross_sections with %d sections", len(cross_sections))
         num_sections = len(cross_sections)
@@ -99,13 +112,19 @@ class Plotter:
         fig, axes = plt.subplots(total_plots_per_section, num_sections, figsize=(4 * num_sections, 12))
         axes = np.atleast_2d(axes)  # 确保axes是2维，即使只有一个截面
 
+
         for i, (z, data) in enumerate(sorted(cross_sections.items())):
             U, x, y = data[0]
             logging.info("Plotting cross-section at z=%.2f", z)
             intensity, phase = np.abs(U) ** 2, np.angle(U)
             extent = [x.min(), x.max(), y.min(), y.max()]
 
-            im0 = axes[0][i].imshow(intensity, extent=extent, cmap='rainbow', origin='lower', interpolation='nearest')
+            im0 = axes[0][i].imshow(intensity,
+                                    extent=extent,
+                                    cmap=cmap_for_spatial_intensity,
+                                    origin='lower',
+                                    interpolation='nearest',
+                                    vmax=vmax_for_spatial_intensity)  # 自适应或手动颜色映射范围
             axes[0][i].set(title=f'intensity at z = {z:.2f}', xlabel='x', ylabel='y')
             plt.colorbar(im0, ax=axes[0][i])
 

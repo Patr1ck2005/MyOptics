@@ -210,7 +210,7 @@ class SpatialLightModulator(OpticalElement):
             return cp.asarray(mod_values)
 
         # 如果既没有函数也没有数组，则不做调制
-        return cp.ones((y.size, x.size), dtype=U.dtype)
+        return cp.ones((y.size, x.size), dtype=cp.float32)
 
     def apply(self, U, x, y, wavelength):
         modulation = self._get_modulation(x, y)
@@ -245,16 +245,27 @@ class MomentumSpaceModulator(OpticalElement):
 
         # 如果有给定的调制数组和对应动量坐标，则插值
         if self.modulation_array is not None and self.mod_kx is not None and self.mod_ky is not None:
+            # # 频域坐标变换
+            # KX = cp.fft.fftshift(KX)
+            # KY = cp.fft.fftshift(KY)
+
             mod_array_cpu = cp.asnumpy(self.modulation_array)
             mod_kx_cpu = cp.asnumpy(self.mod_kx)
             mod_ky_cpu = cp.asnumpy(self.mod_ky)
-            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu, bounds_error=False,
+            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu,
+                                             bounds_error=False,
+                                             method='cubic',
+                                             # method='linear',
                                              fill_value=1.0)
 
             points = cp.stack([KY.ravel(), KX.ravel()], axis=-1)
             points_cpu = cp.asnumpy(points)
             mod_values = interp(points_cpu).reshape(KY.shape)
-            return cp.asarray(mod_values)
+
+            # 频域坐标变换
+            mod_values = cp.asarray(mod_values)
+            # mod_values = cp.fft.ifftshift(mod_values)
+            return mod_values
 
         # 如果既没有函数也没有数组，则不做调制
         return cp.ones_like(KX)
@@ -319,42 +330,6 @@ class MomentumSpacePhasePlate(OpticalElement):
         U_modified = cp.fft.ifft2(U_k_modified)
 
         return U_modified
-
-class MSPP(MomentumSpacePhasePlate):
-    def __init__(self, z_position, topology_charge, wavelength, inner_NA=0, outer_NA=None):
-        """
-        初始化动量空间的相位板。
-
-        参数:
-        z_position (float): 相位板在z轴上的位置。
-        topology_charge (int): 涡旋的拓扑荷数。
-        wavelength (float): 光波波长。
-        inner_NA (float): 环形转换区域的内数值孔径 (NA)。
-        outer_NA (float): 环形转换区域的外数值孔径 (NA)。如果为 None，则设置为最大可能值。
-        """
-        # 定义相位函数
-        def phase_function(KX, KY):
-            # 计算动量空间径向分量
-            K_magnitude = cp.sqrt(KX**2 + KY**2)
-
-            # 计算波矢量大小 (k = 2π / λ)
-            k = 2 * PI / wavelength
-
-            # 将NA转换为动量空间的径向范围
-            inner_k = inner_NA * k
-            outer_k = outer_NA * k if outer_NA is not None else cp.inf
-
-            # 构造环形转换区域的掩模
-            mask = (K_magnitude >= inner_k) & (K_magnitude <= outer_k)
-
-            # 计算涡旋相位因子 (基于拓扑荷数)
-            vortex_phase = cp.exp(1j * topology_charge * cp.arctan2(KY, KX))
-
-            # 将掩模应用到涡旋相位
-            return cp.where(mask, vortex_phase, 0)
-
-        # 初始化父类
-        super().__init__(z_position, phase_function)
 
 
 class SinePhaseGrating(OpticalElement):
