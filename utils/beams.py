@@ -30,6 +30,7 @@ class GaussianBeam:
         返回：
         field (np.ndarray): 给定 \( x, y \) 网格上光场的复振幅数组
         """
+        z_position *= -1
         X, Y = np.meshgrid(x, y)
         R_squared = X**2 + Y**2  # 径向坐标平方
 

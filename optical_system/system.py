@@ -27,9 +27,12 @@ class OpticalSystem:
         initial_field (ndarray): 初始光场。
         """
         self.wavelength = wavelength
-        self.x = cp.array(x)  # 转换为CuPy数组
-        self.y = cp.array(y)  # 转换为CuPy数组
-        self.U = cp.array(initial_field)  # 转换为CuPy数组
+        self.x = cp.array(x, dtype=cp.float32)  # 转换为CuPy数组
+        self.y = cp.array(y, dtype=cp.float32)  # 转换为CuPy数组
+        self.U = cp.array(initial_field, dtype=cp.complex64)  # 转换为CuPy数组
+        # self.x = cp.array(x, dtype=cp.float64)  # 转换为CuPy数组
+        # self.y = cp.array(y, dtype=cp.float64)  # 转换为CuPy数组
+        # self.U = cp.array(initial_field, dtype=cp.complex128)  # 转换为CuPy数组
         self.dx = x[1] - x[0]
         self.dy = y[1] - y[0]
         self.Lx = x[-1] - x[0]

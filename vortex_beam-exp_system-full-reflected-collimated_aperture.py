@@ -10,7 +10,7 @@ project_name = 'vortex_beam-exp_system'
 # Define parameters
 # d0 = 45*1e3  # for no aperture
 d0 = 25*1e3  # for aperture position
-D_measure = 1000e3
+D_measure = 1000e3*1
 f0 = 50*1e3
 # fol = 4e3*5
 fol = f0
@@ -34,7 +34,7 @@ mesh_size = x[1] - x[0]
 # ----------------------------------------------------------------------------------------------------------------------
 # Define initial light field (Gaussian beam)
 from utils.beams import GaussianBeam
-beam = GaussianBeam(wavelength=wavelength, waist_radius=w_0)
+beam = GaussianBeam(wavelength=wavelength, waist_radius=25.7*1e3/2)
 initial_field = beam.compute_field(z_position=d0, x=x, y=y)
 # plt.imshow(np.abs(initial_field)**2*np.angle(initial_field))
 # plt.show()
@@ -43,11 +43,10 @@ initial_field = beam.compute_field(z_position=d0, x=x, y=y)
 # ----------------------------------------------------------------------------------------------------------------------
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
-optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius=0.75*1e3*2))
-optical_system.add_element(lens0 := Lens(z_position=f0-d0, focal_length=f0, D=25.4*1e3))
+optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius=1.5*1e3))
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
-# source|--f0-A-|Lens0|-f0-|-----d1-----|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
-optical_system.add_element(obj_lens1 := ObjectLens(z_position=lens0.back_position+d1+fol, focal_length=fol, NA=0.42))
+# A-----d1-----|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
+optical_system.add_element(obj_lens1 := ObjectLens(z_position=0+d1+fol, focal_length=fol, NA=0.42))
 # optical_system.add_element(MSPP(z_position=obj_lens1.z_position+1e3, topology_charge=2, wavelength=wavelength, inner_NA=0.02*3, outer_NA=0.2))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 # optical_system.add_element(obj_lens := Lens(z_position=lens0.back_position+d1, focal_length=f1, D=25.4*1e3))
@@ -68,7 +67,7 @@ plot_longitudinal_section = False
 
 if plot_cross_sections:
     # Compute
-    cross_z_positions = [lens0.z_position, lens0.back_position, obj_lens1.forw_position,
+    cross_z_positions = [0, obj_lens1.forw_position,
                          obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
     # cross_z_positions = [lens0.back_position, lens0.back_position+0.3*d1, lens0.back_position+0.6*d1, lens0.back_position+1.0*d1]
     cross_sections \
