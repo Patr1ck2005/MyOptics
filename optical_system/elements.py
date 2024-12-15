@@ -2,6 +2,7 @@
 from abc import abstractmethod, ABC
 
 import cupy as cp
+from scipy.interpolate import RegularGridInterpolator
 
 from utils.constants import PI
 
@@ -164,6 +165,115 @@ class PhasePlate(OpticalElement):
         X, Y = cp.meshgrid(x, y)
         phase_factor = self.phase_function(X, Y)
         return U * phase_factor
+
+
+class SpatialLightModulator(OpticalElement):
+    def __init__(self, z_position, modulation_function=None,
+                 modulation_array=None, mod_x=None, mod_y=None):
+        """
+        初始化空间光调制器。
+
+        参数:
+        z_position (float): 光调制器在z轴上的位置。
+        modulation_function (function): 接受 x, y 的函数，用于产生实空间调制因子。
+        modulation_array (ndarray): 已定义好的调制数组。
+        mod_x (ndarray): 与 modulation_array 对应的 x 坐标。
+        mod_y (ndarray): 与 modulation_array 对应的 y 坐标。
+        """
+        super().__init__(z_position)
+        self.modulation_function = modulation_function
+        self.modulation_array = modulation_array
+        self.mod_x = mod_x
+        self.mod_y = mod_y
+
+    def _get_modulation(self, x, y):
+        # 如果有函数定义，则直接计算
+        if self.modulation_function is not None:
+            X, Y = cp.meshgrid(x, y)
+            return self.modulation_function(X, Y)
+
+        # 否则，如果有调制数组和坐标，则使用插值
+        if self.modulation_array is not None and self.mod_x is not None and self.mod_y is not None:
+            # 由于插值在CPU上，需先将数据转移到CPU
+            mod_array_cpu = cp.asnumpy(self.modulation_array)
+            mod_x_cpu = cp.asnumpy(self.mod_x)
+            mod_y_cpu = cp.asnumpy(self.mod_y)
+            interp = RegularGridInterpolator((mod_y_cpu, mod_x_cpu), mod_array_cpu, bounds_error=False, fill_value=0)
+
+            # 创建待插值点阵列
+            X, Y = cp.meshgrid(x, y)
+            points = cp.stack([Y.ravel(), X.ravel()], axis=-1)
+            points_cpu = cp.asnumpy(points)
+
+            # 插值到目标坐标
+            mod_values = interp(points_cpu).reshape(Y.shape)
+            return cp.asarray(mod_values)
+
+        # 如果既没有函数也没有数组，则不做调制
+        return cp.ones((y.size, x.size), dtype=U.dtype)
+
+    def apply(self, U, x, y, wavelength):
+        modulation = self._get_modulation(x, y)
+        # 对输入光场施加调制
+        U_modified = U * modulation
+        return U_modified
+
+
+class MomentumSpaceModulator(OpticalElement):
+    def __init__(self, z_position, modulation_function=None,
+                 modulation_array=None, mod_kx=None, mod_ky=None):
+        """
+        初始化动量空间光调制器。
+
+        参数:
+        z_position (float): 调制器在z轴的位置。
+        modulation_function (function): 接受 kx, ky 的函数，用于产生动量空间调制因子。
+        modulation_array (ndarray): 已定义好的动量空间调制数组。
+        mod_kx (ndarray): 与 modulation_array 对应的 kx 坐标。
+        mod_ky (ndarray): 与 modulation_array 对应的 ky 坐标。
+        """
+        super().__init__(z_position)
+        self.modulation_function = modulation_function
+        self.modulation_array = modulation_array
+        self.mod_kx = mod_kx
+        self.mod_ky = mod_ky
+
+    def _get_modulation_k(self, KX, KY):
+        # 如果有函数定义，则直接计算
+        if self.modulation_function is not None:
+            return self.modulation_function(KX, KY)
+
+        # 如果有给定的调制数组和对应动量坐标，则插值
+        if self.modulation_array is not None and self.mod_kx is not None and self.mod_ky is not None:
+            mod_array_cpu = cp.asnumpy(self.modulation_array)
+            mod_kx_cpu = cp.asnumpy(self.mod_kx)
+            mod_ky_cpu = cp.asnumpy(self.mod_ky)
+            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu, bounds_error=False,
+                                             fill_value=1.0)
+
+            points = cp.stack([KY.ravel(), KX.ravel()], axis=-1)
+            points_cpu = cp.asnumpy(points)
+            mod_values = interp(points_cpu).reshape(KY.shape)
+            return cp.asarray(mod_values)
+
+        # 如果既没有函数也没有数组，则不做调制
+        return cp.ones_like(KX)
+
+    def apply(self, U, x, y, wavelength):
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        kx = cp.fft.fftfreq(x.size, dx) * 2 * PI
+        ky = cp.fft.fftfreq(y.size, dy) * 2 * PI
+        KX, KY = cp.meshgrid(kx, ky)
+
+        U_k = cp.fft.fft2(U)
+
+        # 获取动量空间调制因子
+        mod_factor = self._get_modulation_k(KX, KY)
+        U_k_modified = U_k * mod_factor
+
+        U_modified = cp.fft.ifft2(U_k_modified)
+        return U_modified
 
 
 class MomentumSpacePhasePlate(OpticalElement):
