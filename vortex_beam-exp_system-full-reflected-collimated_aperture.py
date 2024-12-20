@@ -14,7 +14,7 @@ project_name = 'vortex_beam-exp_system'
 d0 = 25*1e3  # for aperture position
 D_measure = 1000e3*1
 f0 = 50*1e3
-fol = 4e3*5
+fol = 4e3
 # fol = f0
 f1 = 50*1e3
 d1 = 500*1e3*1
@@ -28,7 +28,8 @@ mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
 theta0 = np.deg2rad(15)
 w_0 = wavelength/PI/theta0  # Beam waist
 w_ol = 25.4/2*1e3
-sim_size = w_ol * 0.6
+aperture_radius = 1*1e3
+sim_size = aperture_radius * 2
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
 mesh_size = x[1] - x[0]
@@ -45,11 +46,11 @@ initial_field = beam.compute_field(z_position=d0, x=x, y=y)
 # ----------------------------------------------------------------------------------------------------------------------
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
-optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius=1.5*1e3))
+optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius=aperture_radius))
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
 # A-----d1-----|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
 optical_system.add_element(obj_lens1 := ObjectLens(z_position=0+d1+fol, focal_length=fol, NA=0.42))
-optical_system.add_element(MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
+optical_system.add_element(mspp := MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 # optical_system.add_element(obj_lens := Lens(z_position=lens0.back_position+d1, focal_length=f1, D=25.4*1e3))
 # optical_system.add_element(lens3 := Lens(z_position=obj_lens.z_position+f1+f2, focal_length=f2, D=25.4*1e3))
@@ -69,7 +70,7 @@ plot_longitudinal_section = False
 
 if plot_cross_sections:
     # Compute
-    cross_z_positions = [0, obj_lens1.forw_position,
+    cross_z_positions = [0, obj_lens1.forw_position, mspp.z_position-1,
                          obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
     cross_sections \
         = optical_system.propagate_to_cross_sections(cross_z_positions,

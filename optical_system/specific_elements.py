@@ -61,7 +61,7 @@ class MSPP(MomentumSpaceModulator):
         modulation_array = np.sqrt(efficiency) * np.exp(1j * phase)
 
         # 数据来源的动量空间坐标网格定义
-        data_NA = np.sin(np.deg2rad(20))  # 数值孔径
+        data_NA = np.sin(np.deg2rad(40))  # 数值孔径
         data_k_max = 2 * PI * data_NA / wavelength
         n_k = efficiency.shape[0]
         data_kx = np.linspace(-data_k_max, data_k_max, n_k)

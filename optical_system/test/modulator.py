@@ -42,8 +42,8 @@ class MomentumSpaceModulator(OpticalElement):
             mod_ky_cpu = cp.asnumpy(self.mod_ky)
             interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu,
                                              bounds_error=False,
-                                             method='cubic',
-                                             # method='linear',
+                                             # method='cubic',
+                                             method='linear',
                                              fill_value=1.0)
 
             points = cp.stack([KY.ravel(), KX.ravel()], axis=-1)
@@ -114,7 +114,7 @@ def main():
     # plt.show()
 
     # 动量空间坐标网格定义
-    data_NA = np.sin(np.deg2rad(20))  # 数值孔径
+    data_NA = np.sin(np.deg2rad(40))  # 数值孔径
     data_k_max = 2 * PI * data_NA / wavelength
     n_k = efficiency.shape[0]
     data_kx = np.linspace(-data_k_max, data_k_max, n_k)
