@@ -24,12 +24,12 @@ f3 = 100*1e3
 
 
 wavelength = 1.550*1  # Wavelength in um
-mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
-theta0 = np.deg2rad(15)
-w_0 = wavelength/PI/theta0  # Beam waist
+mesh = 1024*10+1  # Mesh size ( +1 to maintain central symmetry)
+# theta0 = np.deg2rad(15)
+# w_0 = wavelength/PI/theta0  # Beam waist
 w_ol = 25.4/2*1e3
 aperture_radius = 1*1e3
-sim_size = aperture_radius * 2
+sim_size = aperture_radius * 4
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
 mesh_size = x[1] - x[0]
@@ -50,7 +50,7 @@ optical_system.add_element(aperture := CircularAperture(z_position=d0-d0, radius
 # optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
 # A-----d1-----|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
 optical_system.add_element(obj_lens1 := ObjectLens(z_position=0+d1+fol, focal_length=fol, NA=0.42))
-optical_system.add_element(mspp := MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
+# optical_system.add_element(mspp := MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 # optical_system.add_element(obj_lens := Lens(z_position=lens0.back_position+d1, focal_length=f1, D=25.4*1e3))
 # optical_system.add_element(lens3 := Lens(z_position=obj_lens.z_position+f1+f2, focal_length=f2, D=25.4*1e3))
@@ -62,15 +62,17 @@ optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_pos
 plotter = Plotter(x, y, wavelength=wavelength)
 
 # ----------------------------------------------------------------------------------------------------------------------
-z_max = optical_system.elements[-1].back_position
+z_max = obj_lens2.back_position+D_measure
 # z_max = lens0.back_position+1.0*d1
 # Compute and Visualization
-plot_cross_sections = True
-plot_longitudinal_section = False
+plot_cross_sections = False
+plot_longitudinal_section = True
 
 if plot_cross_sections:
     # Compute
-    cross_z_positions = [0, obj_lens1.forw_position, mspp.z_position-1,
+    # cross_z_positions = [0, obj_lens1.forw_position, mspp.z_position-1,
+    #                      obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
+    cross_z_positions = [0, obj_lens1.forw_position,
                          obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
     cross_sections \
         = optical_system.propagate_to_cross_sections(cross_z_positions,
@@ -81,7 +83,7 @@ if plot_cross_sections:
                                 save_label=f'{project_name}',
                                 show=False,
                                 cmap_for_spatial_intensity='grey',
-                                vmax_for_spatial_intensity=1e-7,
+                                vmax_for_spatial_intensity=0.2e-7,
                                 )
 
 # another visualization mode

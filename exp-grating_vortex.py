@@ -15,7 +15,7 @@ initial_angle = wavelength/PI/w_0
 
 w_m = 4800
 # sim_size = w_m*40  # Simulation size
-sim_size = 6000  # Simulation size
+sim_size = 4000  # Simulation size
 mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
@@ -31,7 +31,7 @@ optical_system = OpticalSystem(wavelength, x, y, initial_field)
 
 # |--f1--|ObjectLens|--f1--|sample|--f1--|ObjectLens|--f1--|----f2----|Lens1|----f2----|----f2----|Lens2|----f2----|
 # optical_system.add_element(SinePhaseGrating(z_position=0, period=10, amplitude=1))
-optical_system.add_element(RectAmplitudeGrating(z_position=0, period=10, slit_width=10/2))
+optical_system.add_element(RectAmplitudeGrating(z_position=0, period=40, slit_width=20))
 optical_system.add_element(OL1 := ObjectLens(z_position=f1, focal_length=f1))
 # optical_system.add_element(PhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
 optical_system.add_element(MomentumSpacePhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
