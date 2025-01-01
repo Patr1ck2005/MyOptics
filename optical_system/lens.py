@@ -107,7 +107,7 @@ class Axicon(OpticalElement):
         k = 2 * PI / wavelength
         # 计算相位延迟，h(r) = (n - 1) * r * tan(base_angle)
         phase_delay = -(self.refractive_index - 1) * R * cp.tan(self.base_angle) * k
-        phase_factor = cp.exp(-1j * phase_delay)
+        phase_factor = cp.exp(1j * phase_delay)
         # 应用半径限制
         mask = R <= self.radius
         phase_factor = cp.where(mask, phase_factor, 1.0)

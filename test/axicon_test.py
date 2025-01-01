@@ -16,9 +16,9 @@ D_measure = 1000e3*1
 f0 = 50*1e3
 fol = 4e3*10
 # fol = f0
-d1 = 50*1e3*1
+d1 = 50*1e3*0
 f1 = 200*1e3
-d2 = 300*1e3
+d2 = 30*1e3*1
 f2 = 300*1e3
 d3 = 100*1e3
 f3 = 100*1e3
@@ -48,10 +48,11 @@ initial_field = beam.compute_field(z_position=d0, x=x, y=y)
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
 optical_system.add_element(aperture := CircularAperture(z_position=0, radius=aperture_radius))
-optical_system.add_element(axicon := Axicon(z_position=d1, base_angle=np.deg2rad(5)))
-# A-----d1-----|Axicon|---d2--|--f1--|Lens|--f1--|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
+optical_system.add_element(axicon := Axicon(z_position=d1, base_angle=np.deg2rad(1)))
+# A-----d1-----|Axicon|---d2---|--f1--|Lens|--f1--|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
 optical_system.add_element(lens1 := Lens(z_position=axicon.z_position+d2, focal_length=f1))
 optical_system.add_element(obj_lens1 := ObjectLens(z_position=lens1.back_position+fol, focal_length=fol, NA=0.42))
+# optical_system.add_element(mspp := MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -59,16 +60,16 @@ optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_pos
 plotter = Plotter(x, y, wavelength=wavelength)
 
 # ----------------------------------------------------------------------------------------------------------------------
-z_max = obj_lens2.back_position+D_measure
-# z_max = lens0.back_position+1.0*d1
+# z_max = obj_lens2.back_position
+z_max = obj_lens1.forw_position
 # Compute and Visualization
-plot_cross_sections = False
-plot_longitudinal_section = True
+plot_cross_sections = True
+plot_longitudinal_section = False
 
 if plot_cross_sections:
     # Compute
-    cross_z_positions = [0, obj_lens1.forw_position,
-                         obj_lens1.back_position, obj_lens2.back_position, obj_lens2.back_position+D_measure]
+    cross_z_positions = [0, axicon.z_position, obj_lens1.forw_position,
+                         obj_lens1.back_position, obj_lens2.back_position]
     cross_sections \
         = optical_system.propagate_to_cross_sections(cross_z_positions,
                                                      return_momentum_space_spectrum=True,
