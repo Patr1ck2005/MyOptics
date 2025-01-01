@@ -36,7 +36,7 @@ def main():
     optical_system = OpticalSystem(wavelength, x, y, initial_field)
 
     # # 添加光学元件
-    optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
+    optical_system.add_element(MomentumSpacePlate(z_position=0, modulation_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
     optical_system.add_element(ObjectLens(z_position=f, focal_length=f))
     optical_system.add_element(ObjectLens(z_position=z_R, focal_length=z_R))
 

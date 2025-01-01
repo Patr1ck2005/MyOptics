@@ -27,7 +27,7 @@ f1 = 100
 f2 = 1000
 # f2 = 500
 
-optical_system.add_element(MomentumSpacePhasePlate(z_position=0, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+optical_system.add_element(MomentumSpacePlate(z_position=0, modulation_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
 optical_system.add_element(Lens(z_position=f1, focal_length=f1))
 optical_system.add_element(Lens(z_position=f2+2*f1, focal_length=f2))
 optical_system.add_element(Lens(z_position=f2*2+2*f1+f2, focal_length=f2/2))

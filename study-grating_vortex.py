@@ -1,4 +1,5 @@
 import numpy as np
+
 from optical_system.system import OpticalSystem
 from optical_system.elements import *
 from visualization.plotter import Plotter
@@ -32,7 +33,7 @@ optical_system = OpticalSystem(wavelength, x, y, initial_field)
 optical_system.add_element(SinePhaseGrating(z_position=0, period=0.1, amplitude=1))
 optical_system.add_element(ObjectLens(z_position=f1, focal_length=f1))
 # optical_system.add_element(PhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
-optical_system.add_element(MomentumSpacePhasePlate(z_position=f1*2, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+optical_system.add_element(MomentumSpacePlate(z_position=f1 * 2, modulation_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
 optical_system.add_element(Lens(z_position=f2+2*f1, focal_length=f2))
 optical_system.add_element(Lens(z_position=f2*2+2*f1+f2, focal_length=f2))
 
@@ -43,7 +44,7 @@ plotter = Plotter(x, y)
 # ----------------------------------------------------------------------------------------------------------------------
 # Compute and Visualization
 plot_cross_sections = True
-plot_longitudinal_section = True
+plot_longitudinal_section = False
 
 if plot_cross_sections:
     # Compute
@@ -61,7 +62,7 @@ if plot_longitudinal_section:  # independently of cross_sections
     coord_axis, z_coords, intensity, phase = (
         optical_system.propagate_to_longitudinal_section(direction='x',
                                                          position=0.0,
-                                                         num_z=128*1,
+                                                         num_z=128*5,
                                                          # z_max=f2*2+2*f1+f2*2,
                                                          z_max=+2*f1+f2,
                                                          propagation_mode='Rigorous'))  # Fresnel | Rigorous
@@ -70,4 +71,4 @@ if plot_longitudinal_section:  # independently of cross_sections
     plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
                                       save_label='study',
                                       show=False,
-                                      norm_vmin=(1/np.e)/(w_m/w_0)**2)
+                                      norm_vmin=(1/np.e**2)/(w_m/w_0)**2)

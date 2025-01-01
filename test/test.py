@@ -1,6 +1,6 @@
 import numpy as np
 from optical_system.system import OpticalSystem
-from optical_system.elements import Lens, PhasePlate
+from optical_system.elements import Lens, SpatialPlate
 from visualization.plotter import Plotter
 
 # Define parameters
@@ -19,7 +19,7 @@ initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
 f = 100  # Focal length
-optical_system.add_element(PhasePlate(z_position=1, phase_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
+optical_system.add_element(SpatialPlate(z_position=1, modulation_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
 optical_system.add_element(Lens(z_position=f + 1, focal_length=f))
 optical_system.add_element(Lens(z_position=3 * f + 1, focal_length=f))
 

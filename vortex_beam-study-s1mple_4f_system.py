@@ -2,7 +2,7 @@
 
 import numpy as np
 from optical_system.system import OpticalSystem
-from optical_system.elements import Lens, PhasePlate, MomentumSpacePhasePlate
+from optical_system.elements import Lens, SpatialPlate, MomentumSpacePlate
 from visualization.plotter import Plotter
 from utils.constants import PI
 
@@ -29,7 +29,7 @@ def main():
     f = w_0/np.tan(np.deg2rad(12))
     # f = w_0/np.tan(np.deg2rad(1))
     print(f)
-    optical_system.add_element(PhasePlate(z_position=3, phase_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
+    optical_system.add_element(SpatialPlate(z_position=3, modulation_function=lambda X, Y: np.exp(1j * 2 * np.arctan2(Y, X))))
     optical_system.add_element(Lens(z_position=f+3, focal_length=f))
     # optical_system.add_element(MomentumSpacePhasePlate(z_position=2*f+3, phase_function=lambda KX, KY: np.exp(1j * 2 * np.arctan2(KY, KX))))
     optical_system.add_element(Lens(z_position=3*f+3, focal_length=f))

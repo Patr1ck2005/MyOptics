@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from optical_system.elements import Lens, PhasePlate
+from optical_system.elements import Lens, SpatialPlate
 from propagation.angular_spectrum import angular_spectrum_propagate
 from propagation.angular_spectrum_longitudinal import angular_spectrum_propagate_longitudinal, calculate_field_on_grid
 
