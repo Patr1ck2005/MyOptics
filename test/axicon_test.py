@@ -7,7 +7,7 @@ from optical_system.elements import *
 from visualization.plotter import Plotter
 
 # Global configuration
-project_name = 'vortex_beam-exp_system'
+project_name = 'vortex_beam-exp_system-bessel_beam'
 
 # Define parameters
 # d0 = 45*1e3  # for no aperture
@@ -29,7 +29,7 @@ mesh = 1024*4+1  # Mesh size ( +1 to maintain central symmetry)
 # theta0 = np.deg2rad(15)
 # w_0 = wavelength/PI/theta0  # Beam waist
 w_ol = 25.4/2*1e3
-aperture_radius = 1*1e3*0.5
+aperture_radius = 1*1e3
 sim_size = aperture_radius * 10
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
@@ -50,8 +50,8 @@ optical_system = OpticalSystem(wavelength, x, y, initial_field)
 optical_system.add_element(aperture := CircularAperture(z_position=0, radius=aperture_radius))
 optical_system.add_element(axicon := Axicon(z_position=d1, base_angle=np.deg2rad(1)))
 # A-----d1-----|Axicon|---d2---|--f1--|Lens|--f1--|--4--|ObjectLens|--4--|Sample|--4--|ObjectLens|--4--|----f2----|Lens1|----f2----|--d3--|Lens2|--d3--|
-optical_system.add_element(lens1 := Lens(z_position=axicon.z_position+d2, focal_length=f1))
-optical_system.add_element(obj_lens1 := ObjectLens(z_position=lens1.back_position+fol, focal_length=fol, NA=0.42))
+optical_system.add_element(lens1 := Lens(z_position=axicon.z_position+d2+f1, focal_length=f1))
+optical_system.add_element(obj_lens1 := ObjectLens(z_position=lens1.back_position+fol+200*1e3*1, focal_length=fol, NA=0.42))
 # optical_system.add_element(mspp := MSPP(z_position=obj_lens1.z_position+1e3, wavelength=wavelength))
 optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_position+fol, focal_length=fol, NA=0.42))
 
@@ -60,11 +60,11 @@ optical_system.add_element(obj_lens2 := ObjectLens(z_position=obj_lens1.back_pos
 plotter = Plotter(x, y, wavelength=wavelength)
 
 # ----------------------------------------------------------------------------------------------------------------------
-# z_max = obj_lens2.back_position
-z_max = obj_lens1.forw_position
+z_max = obj_lens2.back_position
+# z_max = obj_lens1.forw_position
 # Compute and Visualization
 plot_cross_sections = True
-plot_longitudinal_section = False
+plot_longitudinal_section = True
 
 if plot_cross_sections:
     # Compute
