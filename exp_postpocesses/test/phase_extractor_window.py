@@ -111,5 +111,7 @@ class FourierApp:
 if __name__ == "__main__":
     root = Tk()
     app = FourierApp(root, image_path='./artificial_pattern.png')
-    # app = FourierApp(root, image_path='./interference_cropped.bmp')
+    # app = FourierApp(root, image_path='./interference_1.bmp')
+    # app = FourierApp(root, image_path='./interference_2.bmp')
+    # app = FourierApp(root, image_path='./interference_3.bmp')
     root.mainloop()

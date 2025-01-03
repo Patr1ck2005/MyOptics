@@ -96,13 +96,13 @@ def main():
     ref_wave = generate_universal_wave(
         X, Y,
         wavelength=0.01,
-        curvature_radius=10,
-        tilt_zenith=np.deg2rad(20),   # Example tilt angles
+        curvature_radius=4,
+        tilt_zenith=np.deg2rad(0),   # Example tilt angles
         tilt_azimuth=0,
-        curvature_center_x=0.0,  # Example curvature center offsets
+        curvature_center_x=-1.0,  # Example curvature center offsets
         curvature_center_y=0.0,
-        amplitude_noise_level=3,
-        phase_noise_sigma=0.5,
+        amplitude_noise_level=0.5,
+        phase_noise_sigma=0.1,
         amplitude_correlation_length=10,
         phase_correlation_length=2,
         A=0.1
@@ -110,16 +110,19 @@ def main():
 
     # Vortex beam parameters
     topological_charge = 2
-    aperture_radius = 0.8
-    R = np.sqrt(X**2 + Y**2)
-    Theta = np.arctan2(Y, X)
+    aperture_radius = 0.2
+    R = np.sqrt((X-0.1)**2 + (Y-0.1)**2)
+    Theta = np.arctan2((Y-0.1), (X-0.1))
 
     # Vortex beam definition
     wavelength = 0.01
     k = 2*np.pi/wavelength
-    standard_spherical_phase = (k / 2) * (X**2 + Y**2)
+    standard_spherical_phase = (k / 2) * R**2
     sigma = 0.15
-    radial_intensity = (R / sigma) ** 2 * np.exp(- (R / sigma) ** 2)
+    # radial_intensity = (R / sigma) ** 2 * np.exp(- (R / sigma) ** 2)
+    radial_intensity = (R / sigma) ** 2
+    vortex_beam_intensity = 0.2
+    radial_intensity[radial_intensity > vortex_beam_intensity] = vortex_beam_intensity
     vortex_phase = topological_charge * Theta - standard_spherical_phase/10
     vortex_beam = radial_intensity * np.exp(1j * vortex_phase)
     vortex_beam[R > aperture_radius] = 0
