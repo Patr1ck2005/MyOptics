@@ -102,15 +102,23 @@ class OpticalIntensityAnalyzer:
 
         # 处理数据
         processor = DataProcessor(data)
-        processor.crop_by_shape(
+        (processor
+         # .apply_image_filter(filter_type='gaussian', sigma=10)
+         # .apply_image_filter(filter_type='laplace')
+         .apply_image_filter(filter_type='lowpass', cutoff=20)
+         # .apply_image_filter(filter_type='highpass', cutoff=20)
+         # .apply_image_filter(filter_type='median', size=10)
+         .crop_by_shape(
             center_row=self.crop_shape_params['center_row'],
             center_col=self.crop_shape_params['center_col'],
             radius=self.crop_shape_params['radius'],
             inner_radius=self.crop_shape_params.get('inner_radius', 0),
             shape=self.crop_shape_params['shape'],
             relative=self.crop_shape_params['relative'],
-            save_path=cropped_image_path  # 指定保存路径
-        )
+            )
+         )
+
+        processor.save_processed_image(save_path=cropped_image_path)
         processor.reset_coordinates()
         avg_intensity = processor.calculate_average_intensity()
 
