@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 from scipy.ndimage import gaussian_filter
 
 def generate_universal_wave(
@@ -100,13 +101,12 @@ def main():
         tilt_azimuth=0,
         curvature_center_x=0.0,  # Example curvature center offsets
         curvature_center_y=0.0,
-        amplitude_noise_level=1,
-        phase_noise_sigma=0,
-        amplitude_correlation_length=3,
-        phase_correlation_length=20,
-        A=1
+        amplitude_noise_level=3,
+        phase_noise_sigma=0.5,
+        amplitude_correlation_length=10,
+        phase_correlation_length=2,
+        A=0.1
     )
-    np.save('ref_wave', ref_wave)
 
     # Vortex beam parameters
     topological_charge = 2
@@ -170,9 +170,10 @@ def main():
     # Step 5: Calculate Interference Intensity
     # ---------------------------
     interference_intensity_noisy = np.abs(interfered_field_noisy) ** 2
-    before_interference = np.abs(vortex_beam) ** 2
-    np.save('interference_pattern', interference_intensity_noisy)
-    np.save('before_interference', before_interference)
+    # before_interference = np.abs(vortex_beam) ** 2
+    # np.save('interference_pattern', interference_intensity_noisy)
+    normalised_intensity = np.astype(255*interference_intensity_noisy/interference_intensity_noisy.max(), np.int8)
+    Image.fromarray(normalised_intensity, mode='L').save("artificial_pattern.png")
     # interference_intensity_noisy = np.angle(ref_wave)
 
     # ---------------------------

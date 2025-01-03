@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 from numpy.fft import fft2, fftshift, ifftshift, ifft2
 from scipy.ndimage import gaussian_filter
 
@@ -23,7 +24,10 @@ def generate_reference_wave(shape, intensity, curvature_radius, wavelength, pixe
 
 
 # Step 1: 加载干涉图样
-interference_intensity_noisy = np.load('./interference_pattern.npy')
+# interference_intensity_noisy = np.load('./interference_pattern.npy')
+img = Image.open('./interference_cropped.bmp')
+img = img.convert('L')  # 转换为灰度图像
+interference_intensity_noisy = np.array(img)
 N = interference_intensity_noisy.shape[0]
 
 # 显示原始干涉图像
@@ -38,12 +42,14 @@ plt.show()
 F = fftshift(fft2(interference_intensity_noisy))
 
 # 显示傅里叶谱
-plt.figure(figsize=(6, 6))
-# plt.imshow(np.log(np.abs(F) + 1), cmap='gray')
+plt.subplots(1, 2, figsize=(12, 6))
+plt.subplot(121)
+plt.imshow(np.log(np.abs(F) + 1), cmap='gray', vmin=0)
+plt.colorbar()
+plt.subplot(122)
 plt.imshow(np.angle(F), cmap='twilight')
 plt.colorbar()
-plt.title('Fourier Spectrum of Interference Pattern')
-plt.axis('off')
+plt.tight_layout()
 plt.show()
 
 # 根据傅里叶谱手动选择合适的滤波窗口
@@ -51,27 +57,29 @@ plt.show()
 ny, nx = interference_intensity_noisy.shape
 mask = np.zeros((ny, nx))
 # 定义一个圆形掩码，半径根据实际情况调整
-radius = 10
+radius = 3
 y, x = np.ogrid[:ny, :nx]
 center_y, center_x = ny // 2, nx // 2
 
-loc_x = 546
-loc_y = 512
+# loc_x = 546
+# loc_y = 512
+loc_x = 380
+loc_y = 360
 mask_area = (y - loc_y) ** 2 + (x - loc_x) ** 2 <= radius ** 2
 mask[mask_area] = 1
 
 # 应用掩码
 F_filtered = F * mask
-# 平移傅里叶谱
+# # 平移傅里叶谱
 F_filtered = np.roll(F_filtered, shift=(center_y-loc_y, center_x-loc_x))
-# # 显示傅里叶谱
-# plt.figure(figsize=(6, 6))
-# # plt.imshow(np.log(np.abs(F_filtered) + 1), cmap='gray')
+# 显示傅里叶谱
+plt.figure(figsize=(6, 6))
+plt.imshow(np.log(np.abs(F_filtered) + 1), cmap='gray')
 # plt.imshow(np.angle(F_filtered), cmap='twilight')
-# plt.colorbar()
-# plt.title('Fourier Spectrum of Interference Pattern')
-# plt.axis('off')
-# plt.show()
+plt.colorbar()
+plt.title('Fourier Spectrum of Interference Pattern')
+plt.axis('off')
+plt.show()
 
 # 逆傅里叶变换回空间域
 interference_filtered = ifft2(ifftshift(F_filtered))
