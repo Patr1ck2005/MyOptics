@@ -111,8 +111,8 @@ def main():
     # Vortex beam parameters
     topological_charge = 2
     aperture_radius = 0.2
-    R = np.sqrt((X-0.1)**2 + (Y-0.1)**2)
-    Theta = np.arctan2((Y-0.1), (X-0.1))
+    R = np.sqrt((X)**2 + (Y)**2)
+    Theta = np.arctan2((Y), (X))
 
     # Vortex beam definition
     wavelength = 0.01
