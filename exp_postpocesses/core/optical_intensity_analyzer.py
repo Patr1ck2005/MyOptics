@@ -95,10 +95,9 @@ class OpticalIntensityAnalyzer:
         loader = ImageDataLoader(image_file)
         data = loader.load_data()
 
-        # 定义保存裁剪后图像的路径
+        # 定义保存处理后图像的路径
         temp_dir = Path("./temp")
         temp_dir.mkdir(parents=True, exist_ok=True)
-        cropped_image_path = temp_dir / f"{filename}_cropped.png"
 
         # 处理数据
         processor = DataProcessor(data)
@@ -107,7 +106,7 @@ class OpticalIntensityAnalyzer:
          # .apply_image_filter(filter_type='laplace')
          # .apply_image_filter(filter_type='lowpass', cutoff=20)
          # .apply_image_filter(filter_type='highpass', cutoff=20)
-         # .apply_image_filter(filter_type='median', size=50)
+         .apply_image_filter(filter_type='median', size=50)
          .crop_by_shape(
             center_row=self.crop_shape_params['center_row'],
             center_col=self.crop_shape_params['center_col'],
@@ -118,6 +117,7 @@ class OpticalIntensityAnalyzer:
             )
          )
 
+        cropped_image_path = temp_dir / f"{filename}_cropped.png"
         processor.save_processed_image(save_path=cropped_image_path)
         processor.reset_coordinates()
         avg_intensity = processor.calculate_average_intensity()
