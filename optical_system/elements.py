@@ -333,6 +333,6 @@ class Aperture(OpticalElement):
 
 
 
-from .grating import *
-from .apertures import *
-from .lens import *
+from optical_system.elements.grating import *
+from optical_system.elements.apertures import *
+from optical_system.elements.lens import *

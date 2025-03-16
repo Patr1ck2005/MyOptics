@@ -1,9 +1,7 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
-from optical_system.specific_elements import MSPP
+from optical_system.elements.specific_elements import MSPP
 from optical_system.system import OpticalSystem
-from optical_system.elements import *
 from visualization.plotter import Plotter
 
 # Global configuration
