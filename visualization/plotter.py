@@ -271,7 +271,8 @@ class Plotter:
         # 确保 norm_vmin < norm_vmax
         if norm_vmin >= norm_vmax:
             logging.error("norm_vmin (%.3f) must be less than norm_vmax (%.3f)", norm_vmin, norm_vmax)
-            raise ValueError("norm_vmin 必须小于 norm_vmax")
+            # raise ValueError("norm_vmin 必须小于 norm_vmax")
+            norm_vmin = 0
 
         im0 = axes[0].imshow(
             intensity,
@@ -281,7 +282,7 @@ class Plotter:
             origin='lower',
             interpolation='nearest',
             # norm=LogNorm(vmin=norm_vmin, vmax=norm_vmax),  # 使用 LogNorm
-            norm=SymLogNorm(vmin=norm_vmin, vmax=norm_vmax, linthresh=norm_vmin, linscale=1),  # 使用 SymLogNorm
+            # norm=SymLogNorm(vmin=norm_vmin, vmax=norm_vmax, linthresh=norm_vmin, linscale=1),  # 使用 SymLogNorm
         )
         axes[0].set(title=f'Longitudinal Intensity at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im0, ax=axes[0])

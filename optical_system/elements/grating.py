@@ -1,6 +1,6 @@
 import cupy as cp
 
-from optical_system.elements import OpticalElement, SpatialPlate
+from optical_system.elements_cls import OpticalElement, SpatialPlate
 from utils.constants import PI
 
 class SinePhaseGrating(SpatialPlate):

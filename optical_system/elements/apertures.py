@@ -1,4 +1,4 @@
-from optical_system.elements import Aperture
+from optical_system.elements_cls import Aperture
 import cupy as cp
 
 class CircularAperture(Aperture):

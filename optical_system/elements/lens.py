@@ -1,6 +1,6 @@
 import cupy as cp
 
-from optical_system.elements import Lens, OpticalElement
+from optical_system.elements_cls import Lens, OpticalElement
 from utils.constants import PI
 
 class ObjectLens(Lens):
