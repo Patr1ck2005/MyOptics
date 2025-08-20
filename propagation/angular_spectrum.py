@@ -1,8 +1,6 @@
 import cupy as cp
 from matplotlib import pyplot as plt
 
-from propagation.multi_layer_H import calculate_H
-
 import numpy as np
 
 
