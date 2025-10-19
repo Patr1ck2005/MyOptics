@@ -42,8 +42,8 @@ def angular_spectrum_propagate(U, x, y, z, wavelength, propagation_mode,
     if propagation_mode == 'Fresnel':
         H = cp.exp(-1j * cp.pi * wavelength * z * (FX ** 2 + FY ** 2))  # Fresnel 传播因子 H (可选)
     elif propagation_mode == 'Rigorous':
-        # H = cp.exp(1j * kz * z)
-        H = calculate_H(k_x=1j*kz/90e-9, z=z*90e-9, lamda=365e-9)
+        H = cp.exp(1j * kz * z)
+        # H = calculate_H(k_x=1j*kz/90e-9, z=z*90e-9, lamda=365e-9)
         plt.imshow(cp.abs(H).get())
         plt.show()
     else:

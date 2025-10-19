@@ -1,7 +1,7 @@
 import numpy as np
 import cupy as cp
 
-from optical_system.elements import MomentumSpacePlate, MomentumSpaceModulator
+from optical_system.elements_cls import MomentumSpacePlate, MomentumSpaceModulator
 from utils.constants import PI
 
 import os
