@@ -12,6 +12,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 # 构建 data 文件夹中 efficiency.npy 的绝对路径
 data_path = lambda file_name: os.path.join(current_dir, "data", file_name)
 
+
 class SimpleMSPP(MomentumSpacePlate):
     def __init__(self, z_position, topology_charge, wavelength, inner_NA=0, outer_NA=None):
         """

@@ -16,7 +16,7 @@ class MultiLayerTM:
         self.wl  = wavelength
         self.k0  = 2*np.pi / wavelength
         # 默认 kx = 2*(2π/λ)
-        self.kx  = kx if kx is not None else 2*2*np.pi/self.wl
+        self.kx  = kx*self.k0 if kx is not None else 2*self.k0
         self._update()
 
     def _update(self):
@@ -371,13 +371,13 @@ class MultiLayerTM:
 # ---------------- Demo ----------------
 if __name__=='__main__':
     layers = [
-        Layer(2.56, 10),
-        Layer(-2.6115+0.4431j, 10),
-        Layer(2.7640+0.1808j, 15),
-        Layer(-2.6194+0.4551j, 40),
-        Layer(2.43, None),
+        Layer(2, 30),
+        Layer(-2+0.5j, 20),
+        Layer(2.25, 30),
+        Layer(-2+0.5j, 20),
+        Layer(2, None),
     ]
-    solver_test = MultiLayerTM(layers, eps_incident=2.56, wavelength=365)
+    solver_test = MultiLayerTM(layers, eps_incident=2, wavelength=365)
 
     print("r =", solver_test.reflection_coefficient())
 
@@ -386,38 +386,37 @@ if __name__=='__main__':
 
     # 绘图
     plt.figure(figsize=(10, 6))
-    # for die_thickness in [0, 5, 10, 15, 20]:
-    # for plas_thickness in [0, 5, 10, 15, 20]:
-    for plas_thickness in [0, 10, 20, 40, 60]:
-    # for plas_epsilon in [-2.2, -2.4, -2.6, -2.8, -3.0]:
-    # for die_epsilon in [2.1, 2.3, 2.5, 2.7, 2.9]:
-        layers = [
+    # layers = [
+    #     Layer(2, 30),
+    #     Layer(-2+0.5j, 20),
+    #     Layer(2.25, 30),
+    #     Layer(-2+0.5j, 20),
+    #     Layer(2, None),
+    # ]
+    layers = [
             Layer(2.56, 10),
-            # Layer(plas_epsilon + 0.4431j, 10),
-            Layer(-2.6115+0.4431j, 10),
+            Layer(-2.6115 + 0.4431j, 10),
             Layer(2.7640 + 0.1808j, 15),
-            # Layer(plas_epsilon + 0.4551j, 40),
-            Layer(-2.6194+0.4551j, plas_thickness),
+            Layer(-2.6194 + 0.4551j, 40),
             Layer(2.43, None),
         ]
 
-        solver = MultiLayerTM(layers, eps_incident=2.56, wavelength=365)
+    solver = MultiLayerTM(layers, eps_incident=2, wavelength=365)
 
-        # 单点场强
-        z0 = 75.0
-        print(f"|H({z0})|^2 =", solver.field_intensity_at(z0))
+    # 单点场强
+    # z0 = 100.0
+    z0 = 75.0
+    print(f"|H({z0})|^2 =", solver.field_intensity_at(z0))
 
-        # 随 kx 扫描 z=75 处的场强
-        kx_vals = np.linspace(-10*solver.k0, 10*solver.k0, 300)
-        ks, Is = solver.scan_field('kx', kx_vals, z0)
+    # 随 kx 扫描 z=100 处的场强
+    kx_vals = np.linspace(-4*solver.k0, 4*solver.k0, 300)
+    ks, Is = solver.scan_field('kx', kx_vals, z0)
 
-        # plt.plot(ks, Is, label=f'die thickness = {die_thickness}nm')
-        plt.plot(ks/solver.k0, Is, label=f'plas thickness 2 = {plas_thickness}nm')
-        # plt.plot(ks, Is, label=f'plas epsilon (real) = {plas_epsilon}')
-        # plt.plot(ks, Is, label=f'die epsilon (real) = {die_epsilon}')
-        plt.xlabel(r'$k_x/k_0$')
-        plt.ylabel(rf'$|H(z={z0})|^2$')
-        plt.title(f'Field Intensity at z={z0} vs $k_x$')
+    plt.plot(ks/solver.k0, Is)
+    plt.xlabel(r'$k_x/k_0$')
+    plt.ylabel(rf'$|H(z={z0})|^2$')
+    plt.yscale('log')
+    plt.title(f'Field Intensity at z={z0} vs $k_x$')
     plt.legend(loc='upper left')
     plt.show()
 

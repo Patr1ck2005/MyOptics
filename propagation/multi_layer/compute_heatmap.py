@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 # 假设你的 Layer 和 MultiLayerTM 已经定义在上面……
 
 if __name__ == '__main__':
+    # Layer(2.56, 10),
+    # Layer(-2.6115+0.4431j, 10),
+    # Layer(2.7640+0.1808j, 15),
+    # Layer(-2.6194+0.4551j, 40),
+    # Layer(2.43, None),
     # 参数设置
     z0 = 75.0
 
