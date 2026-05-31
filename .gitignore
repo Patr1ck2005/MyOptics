@@ -7,6 +7,10 @@
 logs/
 *.log
 
+*.pyc
+
+*.xlsx
+
 # 忽略所有图片文件
 *.png
 *.jpg

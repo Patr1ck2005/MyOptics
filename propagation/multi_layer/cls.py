@@ -2,29 +2,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import j0  # 用于 Hankel 变换
 
+
 class Layer:
     """Represents a single layer with complex permittivity and finite or semi-infinite thickness."""
+
     def __init__(self, eps: complex, thickness: float = None):
         self.eps = eps
         self.d = thickness
 
+
 class MultiLayerTM:
     """Handles TM‐polarized wave propagation through a stack of layers."""
+
     def __init__(self, layers, eps_incident=1.0, wavelength=365, kx=None):
         self.layers = layers
         self.eps0 = eps_incident
-        self.wl  = wavelength
-        self.k0  = 2*np.pi / wavelength
+        self.wl = wavelength
+        self.k0 = 2 * np.pi / wavelength
         # 默认 kx = 2*(2π/λ)
-        self.kx  = kx*self.k0 if kx is not None else 2*self.k0
+        self.kx = kx * self.k0 if kx is not None else 2 * self.k0
         self._update()
 
     def _update(self):
         """Recompute all dependent quantities."""
         # kz in each region
-        self.kz0 = np.sqrt(self.eps0*self.k0**2 - self.kx**2, dtype=complex)
-        self.kz  = [np.sqrt(layer.eps*self.k0**2 - self.kx**2, dtype=complex)
-                    for layer in self.layers]
+        self.kz0 = np.sqrt(self.eps0 * self.k0 ** 2 - self.kx ** 2, dtype=complex)
+        self.kz = [np.sqrt(layer.eps * self.k0 ** 2 - self.kx ** 2, dtype=complex)
+                   for layer in self.layers]
         # interface positions [0, d1, d1+d2, …]
         th = [L.d for L in self.layers if L.d is not None]
         self.interfaces = np.concatenate(([0], np.cumsum(th)))
@@ -36,8 +40,8 @@ class MultiLayerTM:
         """Single‐layer TM transfer matrix over thickness d."""
         φ = kz * d
         return np.array([
-            [ np.cos(φ),         (eps/kz)*np.sin(φ)],
-            [-(kz/eps)*np.sin(φ), np.cos(φ)        ]
+            [np.cos(φ), (eps / kz) * np.sin(φ)],
+            [-(kz / eps) * np.sin(φ), np.cos(φ)]
         ], dtype=complex)
 
     def _global_M(self):
@@ -53,10 +57,10 @@ class MultiLayerTM:
         a0 = 1j * self.kz0 / self.eps0
         M00, M01, M10, M11 = self._global_M().ravel()
         epsN, kzN = self.layers[-1].eps, self.kz[-1]
-        cN = 1j * kzN/epsN
-        num = -( (M10 - cN*M00) + (M11 - cN*M01)*a0 )
-        den =   (M10 - cN*M00) - (M11 - cN*M01)*a0
-        return num/den
+        cN = 1j * kzN / epsN
+        num = -((M10 - cN * M00) + (M11 - cN * M01) * a0)
+        den = (M10 - cN * M00) - (M11 - cN * M01) * a0
+        return num / den
 
     def _compute_As_Bs(self):
         """
@@ -65,8 +69,8 @@ class MultiLayerTM:
         """
         # 1. initial state S = [H; Q] at z=0
         r = self.reflection_coefficient()
-        a0 = 1j*self.kz0/self.eps0
-        S = np.array([1+r, a0*(1-r)], dtype=complex)
+        a0 = 1j * self.kz0 / self.eps0
+        S = np.array([1 + r, a0 * (1 - r)], dtype=complex)
 
         # 2. propagate across each finite layer, store state at each interface
         Ss = [S]
@@ -80,11 +84,12 @@ class MultiLayerTM:
         for (L, kz, S0) in zip(self.layers[:-1], self.kz[:-1], Ss[:-1]):
             H0, Q0 = S0
             # A = (H + (ε/(i kz)) Q)/2, B = (H - …)/2
-            factor = L.eps/(1j*kz)
-            As.append(0.5*(H0 + factor*Q0))
-            Bs.append(0.5*(H0 - factor*Q0))
+            factor = L.eps / (1j * kz)
+            As.append(0.5 * (H0 + factor * Q0))
+            Bs.append(0.5 * (H0 - factor * Q0))
         # last semi‐infinite: only forward
-        As.append(Ss[-1][0]); Bs.append(0)
+        As.append(Ss[-1][0]);
+        Bs.append(0)
 
         self._As = As
         self._Bs = Bs
@@ -96,19 +101,19 @@ class MultiLayerTM:
             idx = np.searchsorted(self.interfaces[1:], z, side='right')
             zloc = z - self.interfaces[idx]
         else:
-            idx = len(self.layers)-1
+            idx = len(self.layers) - 1
             zloc = z - self.interfaces[-1]
         A, B, kz = self._As[idx], self._Bs[idx], self.kz[idx]
         # if semi‐infinite, B=0 already
-        return A*np.exp(1j*kz*zloc) + B*np.exp(-1j*kz*zloc)
+        return A * np.exp(1j * kz * zloc) + B * np.exp(-1j * kz * zloc)
 
     def field_intensity_at(self, z):
         """Return |H(z)|^2."""
-        return np.abs(self.field_at(z))**2
+        return np.abs(self.field_at(z)) ** 2
 
     def field_profile(self, num=600, zmax_factor=1.5):
         """Return (z_array, H_array) over entire structure."""
-        zmax = self.interfaces[-1]*zmax_factor
+        zmax = self.interfaces[-1] * zmax_factor
         z = np.linspace(0, zmax, num)
         H = np.vectorize(self.field_at)(z)
         return z, H
@@ -131,18 +136,18 @@ class MultiLayerTM:
         out = []
         for v in values:
             setattr(self, param, v)
-            if param=='wl':  # adjust k0[object Object]
-                self.k0 = 2*np.pi/self.wl
+            if param == 'wl':  # adjust k0[object Object]
+                self.k0 = 2 * np.pi / self.wl
             self._update()
             out.append(self.field_intensity_at(z))
         # restore
         setattr(self, param, orig)
-        if param=='wl':
-            self.k0 = 2*np.pi/orig
+        if param == 'wl':
+            self.k0 = 2 * np.pi / orig
         self._update()
         return np.array(values), np.array(out)
 
-# ------- 新增：计算 H(kx) 扫描（复场） -------
+    # ------- 新增：计算 H(kx) 扫描（复场） -------
     def transfer_vs_kx(self, z, kx_vals):
         """
         返回 z 处随 kx 的复场 H(kx)（或强度 |H|^2）。
@@ -172,14 +177,14 @@ class MultiLayerTM:
         if not np.allclose(dks, dks[0], rtol=1e-6, atol=1e-12):
             raise ValueError("kx_vals 需要均匀采样以正确进行 FFT。")
         dk = dks[0]
-        N  = kx_vals.size
+        N = kx_vals.size
 
         # 空间域采样间隔与坐标
-        dx = 2*np.pi/(N*dk)
-        x = (np.arange(N) - N//2) * dx
+        dx = 2 * np.pi / (N * dk)
+        x = (np.arange(N) - N // 2) * dx
 
         # 连续对偶的尺度：Δk / (2π)
-        h = (dk/(2*np.pi)) * np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Hk)))
+        h = (dk / (2 * np.pi)) * np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Hk)))
         return x, h
 
     # ------- 新增：通用 FWHM 计算工具 -------
@@ -262,22 +267,23 @@ class MultiLayerTM:
         dks = np.diff(kx_vals)
         if not np.allclose(dks, dks[0], rtol=1e-6, atol=1e-12):
             raise ValueError("kx_vals 需要等间隔采样。")
-        dk = dks[0]; N = kx_vals.size
-        dx = 2*np.pi/(N*dk)
-        x  = (np.arange(N) - N//2)*dx
-        l_amp = (dk/(2*np.pi))*np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Hk)))
+        dk = dks[0];
+        N = kx_vals.size
+        dx = 2 * np.pi / (N * dk)
+        x = (np.arange(N) - N // 2) * dx
+        l_amp = (dk / (2 * np.pi)) * np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Hk)))
 
-        lsf = np.abs(l_amp)**2
+        lsf = np.abs(l_amp) ** 2
 
         # 归一化
         if normalize is None:
             pass
         elif normalize == 'peak':
             m = lsf.max()
-            if m>0: lsf = lsf/m
+            if m > 0: lsf = lsf / m
         elif normalize == 'area':
             A = np.trapz(lsf, x)
-            if A>0: lsf = lsf/A
+            if A > 0: lsf = lsf / A
         else:
             raise ValueError("normalize 仅支持 None/'peak'/'area'。")
 
@@ -336,30 +342,30 @@ class MultiLayerTM:
 
         # r 网格：默认取到 ~ π/dk（与 1D 情况类似的 Nyquist 尺度）
         if r_max is None:
-            r_max = np.pi/dk
+            r_max = np.pi / dk
         r = np.linspace(0.0, r_max, num_r)
 
         # 数值 Hankel 逆变换（梯形积分类比）： h(r) = (1/2π)∫ H(kr) J0(kr r) kr dkr
         # 向量化实现：对每个 r，计算 J0(kr*r) 并积分
         # [num_r, num_k] = outer
-        KR = np.outer(r, kr)               # [Nr, Nk]
-        J  = j0(KR)                         # Bessel J0
-        integrand = (Hkr * kr)              # [Nk]
+        KR = np.outer(r, kr)  # [Nr, Nk]
+        J = j0(KR)  # Bessel J0
+        integrand = (Hkr * kr)  # [Nk]
         # 梯形法：等间距 dk
         # 对每个 r: sum( J[r,:]*integrand[:] ) * dk
-        h_amp = (1.0/(2*np.pi)) * (J @ integrand) * dk
+        h_amp = (1.0 / (2 * np.pi)) * (J @ integrand) * dk
 
-        psf = np.abs(h_amp)**2
+        psf = np.abs(h_amp) ** 2
 
         # 归一化
         if normalize is None:
             pass
         elif normalize == 'peak':
             m = psf.max()
-            if m>0: psf = psf/m
+            if m > 0: psf = psf / m
         elif normalize == 'area':
-            A = np.trapz( psf * 2*np.pi*r, r )   # 2πr 权重：面积归一
-            if A>0: psf = psf/A
+            A = np.trapz(psf * 2 * np.pi * r, r)  # 2πr 权重：面积归一
+            if A > 0: psf = psf / A
         else:
             raise ValueError("normalize 仅支持 None/'peak'/'area'。")
 
@@ -368,13 +374,14 @@ class MultiLayerTM:
         fwhm, rL, rR = self._fwhm(full_r, full_psf)
         return r, h_amp, psf, fwhm, rL, rR
 
+
 # ---------------- Demo ----------------
-if __name__=='__main__':
+if __name__ == '__main__':
     layers = [
         Layer(2, 30),
-        Layer(-2+0.5j, 20),
+        Layer(-2 + 0.5j, 20),
         Layer(2.25, 30),
-        Layer(-2+0.5j, 20),
+        Layer(-2 + 0.5j, 20),
         Layer(2, None),
     ]
     solver_test = MultiLayerTM(layers, eps_incident=2, wavelength=365)
@@ -394,12 +401,12 @@ if __name__=='__main__':
     #     Layer(2, None),
     # ]
     layers = [
-            Layer(2.56, 10),
-            Layer(-2.6115 + 0.4431j, 10),
-            Layer(2.7640 + 0.1808j, 15),
-            Layer(-2.6194 + 0.4551j, 40),
-            Layer(2.43, None),
-        ]
+        Layer(2.56, 10),
+        Layer(-2.6115 + 0.4431j, 10),
+        Layer(2.7640 + 0.1808j, 15),
+        Layer(-2.6194 + 0.4551j, 40),
+        Layer(2.43, None),
+    ]
 
     solver = MultiLayerTM(layers, eps_incident=2, wavelength=365)
 
@@ -409,14 +416,13 @@ if __name__=='__main__':
     print(f"|H({z0})|^2 =", solver.field_intensity_at(z0))
 
     # 随 kx 扫描 z=100 处的场强
-    kx_vals = np.linspace(-4*solver.k0, 4*solver.k0, 300)
+    kx_vals = np.linspace(-4 * solver.k0, 4 * solver.k0, 300)
     ks, Is = solver.scan_field('kx', kx_vals, z0)
 
-    plt.plot(ks/solver.k0, Is)
+    plt.plot(ks / solver.k0, Is)
     plt.xlabel(r'$k_x/k_0$')
     plt.ylabel(rf'$|H(z={z0})|^2$')
     plt.yscale('log')
     plt.title(f'Field Intensity at z={z0} vs $k_x$')
     plt.legend(loc='upper left')
     plt.show()
-
