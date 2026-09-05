@@ -25,37 +25,12 @@ def kz_of(N_j, k0, kx):
     return _kz_physical(np.lib.scimath.sqrt(N_j ** 2 * k0 ** 2 - kx ** 2))
 
 
-def tmm_kx(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx, pol="s"):
-    """
-    Coherent TMM at fixed transverse wavevector kx (in 1/nm).
-
-    Parameters
-    ----------
-    wl_um : float
-        Wavelength in μm.
-    N_layers : list of complex
-        Complex refractive indices of finite layers, incident->exit order.
-    d_nm_list : list of float
-        Thicknesses (nm) of each finite layer.
-    N_inc, N_exit : complex
-        Complex refractive indices of incident and exit (semi-infinite) media.
-    kx : float
-        Transverse wavevector (1/nm), conserved across all layers.
-    pol : 's' or 'p'
-
-    Returns
-    -------
-    T, R : float
-        Transmittance (Poynting-flux ratio) and reflectance (|r|^2).
-    """
+def _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit, kz_inc, kz_exit, kz_layers, pol):
+    """核心矩阵级联，由已算好的各层 kz 驱动（tmm_kx / tmm_k2 共用）。"""
     if pol not in ("s", "p"):
         raise ValueError(f"pol must be 's' or 'p', got {pol!r}")
 
     k0 = 2.0 * np.pi / (wl_um * 1000.0)  # 1/nm
-
-    kz_inc = kz_of(N_inc, k0, kx)
-    kz_exit = kz_of(N_exit, k0, kx)
-    kz_layers = [kz_of(N_j, k0, kx) for N_j in N_layers]
 
     if pol == "s":
         Y_inc = kz_inc / k0
@@ -85,3 +60,69 @@ def tmm_kx(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx, pol="s"):
     T = (np.real(Ys) / reY0) * np.abs(t) ** 2 if reY0 > 0 else 0.0
     R = np.abs(r) ** 2
     return float(T), float(R)
+
+
+def tmm_kx(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx, pol="s"):
+    """
+    Coherent TMM at fixed transverse wavevector kx (in 1/nm).
+
+    Parameters
+    ----------
+    wl_um : float
+        Wavelength in μm.
+    N_layers : list of complex
+        Complex refractive indices of finite layers, incident->exit order.
+    d_nm_list : list of float
+        Thicknesses (nm) of each finite layer.
+    N_inc, N_exit : complex
+        Complex refractive indices of incident and exit (semi-infinite) media.
+    kx : float
+        Transverse wavevector (1/nm), conserved across all layers.
+        只依赖 kx²，符号/取向无关（膜堆法向 z 轴对称）。
+    pol : 's' or 'p'
+
+    Returns
+    -------
+    T, R : float
+        Transmittance (Poynting-flux ratio) and reflectance (|r|^2).
+    """
+    k0 = 2.0 * np.pi / (wl_um * 1000.0)  # 1/nm
+
+    kz_inc = kz_of(N_inc, k0, kx)
+    # 掠入射精确临界（kx2 = N_inc²k0²）：入射波沿界面传播、法向能流为零，
+    # 极限行为是全反射（p 导纳 kz→0 发散）。特判避免除零 NaN。
+    if kz_inc == 0:
+        return 0.0, 1.0
+    kz_exit = kz_of(N_exit, k0, kx)
+    kz_layers = [kz_of(N_j, k0, kx) for N_j in N_layers]
+
+    return _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit,
+                   kz_inc, kz_exit, kz_layers, pol)
+
+
+def tmm_k2(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx2, pol="s"):
+    """
+    Coherent TMM driven by squared transverse wavevector kx2 = kx² + ky².
+
+    层状膜堆关于 z 轴径向对称，传递函数只依赖横向波矢的模平方；
+    本入口直接接受 kx2，供动量空间径向传函 H(kr)（如 MultilayerSlab）
+    使用，避免为每个 (kx, ky) 网格点重复开方/平方。
+
+    参数与返回值同 tmm_kx；kx2 的单位为 1/nm 的平方。
+    """
+    if kx2 < 0:
+        raise ValueError(f"kx2 must be non-negative, got {kx2}")
+    k0 = 2.0 * np.pi / (wl_um * 1000.0)  # 1/nm
+
+    def kz_of_k2(N_j):
+        return _kz_physical(np.lib.scimath.sqrt(N_j ** 2 * k0 ** 2 - kx2))
+
+    kz_inc = kz_of_k2(N_inc)
+    # 掠入射精确临界（kx2 = N_inc²k0²）：极限行为是全反射，特判避免除零 NaN
+    if kz_inc == 0:
+        return 0.0, 1.0
+    kz_exit = kz_of_k2(N_exit)
+    kz_layers = [kz_of_k2(N_j) for N_j in N_layers]
+
+    return _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit,
+                   kz_inc, kz_exit, kz_layers, pol)
