@@ -19,91 +19,23 @@ import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
 
-from optimize_transmittance import build_nk_interpolators
+import sys
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from multilayer.common.materials import build_nk_interpolators
+from multilayer.common.tmm import kz_of, tmm_kx
 
 OUT_DIR = Path(__file__).parent.parent / 'rsl' / 'angle_scan_spectra'
+DATA_DIR = Path(__file__).parent.parent / 'data'
 
 matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['font.size'] = 9
 matplotlib.rcParams['xtick.direction'] = 'in'
 matplotlib.rcParams['ytick.direction'] = 'in'
 matplotlib.rcParams['axes.unicode_minus'] = False
-
-
-# ============================================================
-#  1. Coherent TMM at arbitrary angle (kx-driven)
-# ============================================================
-def _kz_physical(kz):
-    """Pick the physical branch: Im(kz) >= 0; if ~real, Re(kz) >= 0."""
-    if np.imag(kz) < 0:
-        return -kz
-    if np.isclose(np.imag(kz), 0.0, atol=1e-14) and np.real(kz) < 0:
-        return -kz
-    return kz
-
-
-def tmm_kx(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx, pol='s'):
-    """
-    Coherent TMM at fixed transverse wavevector kx (in 1/nm).
-
-    Parameters
-    ----------
-    wl_um : float
-        Wavelength in μm.
-    N_layers : list of complex
-        Complex refractive indices of finite layers, incident->exit order.
-    d_nm_list : list of float
-        Thicknesses (nm) of each finite layer.
-    N_inc, N_exit : complex
-        Complex refractive indices of incident and exit (semi-infinite) media.
-    kx : float
-        Transverse wavevector (1/nm), conserved across all layers.
-    pol : 's' or 'p'
-
-    Returns
-    -------
-    T, R : float
-        Transmittance (Poynting-flux ratio) and reflectance (|r|^2).
-    """
-    k0 = 2.0 * np.pi / (wl_um * 1000.0)  # 1/nm
-
-    def kz_of(N_j):
-        return _kz_physical(np.lib.scimath.sqrt(N_j**2 * k0**2 - kx**2))
-
-    kz_inc = kz_of(N_inc)
-    kz_exit = kz_of(N_exit)
-    kz_layers = [kz_of(N_j) for N_j in N_layers]
-
-    if pol == 's':
-        Y_inc = kz_inc / k0
-        Y_exit = kz_exit / k0
-        Y_layers = [kzj / k0 for kzj in kz_layers]
-    elif pol == 'p':
-        Y_inc = N_inc**2 * k0 / kz_inc
-        Y_exit = N_exit**2 * k0 / kz_exit
-        Y_layers = [Nj**2 * k0 / kzj for Nj, kzj in zip(N_layers, kz_layers)]
-    else:
-        raise ValueError(f"pol must be 's' or 'p', got {pol!r}")
-
-    M = np.eye(2, dtype=complex)
-    for Y_j, dj, kzj in zip(Y_layers, d_nm_list, kz_layers):
-        delta = kzj * dj
-        cos_d = np.cos(delta)
-        sin_d = np.sin(delta)
-        Mj = np.array([[cos_d, -1j * sin_d / Y_j],
-                       [-1j * Y_j * sin_d, cos_d]], dtype=complex)
-        M = M @ Mj
-
-    m11, m12, m21, m22 = M[0, 0], M[0, 1], M[1, 0], M[1, 1]
-    Y0, Ys = Y_inc, Y_exit
-    denom = Y0 * m11 + Y0 * Ys * m12 + m21 + Ys * m22
-    r = (Y0 * m11 + Y0 * Ys * m12 - m21 - Ys * m22) / denom
-    t = 2.0 * Y0 / denom
-
-    reY0 = np.real(Y0)
-    T = (np.real(Ys) / reY0) * np.abs(t)**2 if reY0 > 0 else 0.0
-    R = np.abs(r)**2
-    return float(T), float(R)
 
 
 # ============================================================
@@ -154,18 +86,44 @@ def compute_at(wl_um, theta_deg, pol,
     _, R_back = tmm_kx(wl_um, [], [], N_film, N_air, kx, pol)
 
     # Single-pass intensity transmission through the 100μm film at this kx
-    kz_film = _kz_physical(np.lib.scimath.sqrt(N_film**2 * k0**2 - kx**2))
+    kz_film = kz_of(N_film, k0, kx)
     tau = float(np.exp(-2.0 * np.imag(kz_film) * d_film_nm))
 
     return incoherent_tr(T_front, R_front, T_internal, R_internal, R_back, tau)
 
 
+def compute_at_no_abs(wl_um, theta_deg, pol,
+                      n_ZnO, k_ZnO, n_Ag, k_Ag, n_film,
+                      d_ZnO1=40.0, d_Ag=10.0, d_ZnO2=10.0):
+    """Compute (T, R) with semi-infinite lossless film (no substrate absorption).
+
+    Matches the convention of optimize_transmittance.compute_spectrum: the film
+    is treated as semi-infinite with real refractive index (k_film = 0), so
+    there is no back-surface reflection and no absorption inside the film.
+    """
+    k0 = 2.0 * np.pi / (wl_um * 1000.0)
+    kx = k0 * np.sin(np.deg2rad(theta_deg))
+
+    N_inc = complex(1.0, 0.0)
+    N_film = complex(n_film, 0.0)  # k = 0
+
+    N_layers = [complex(n_ZnO, k_ZnO), complex(n_Ag, k_Ag), complex(n_ZnO, k_ZnO)]
+    d_list = [d_ZnO1, d_Ag, d_ZnO2]
+    return tmm_kx(wl_um, N_layers, d_list, N_inc, N_film, kx, pol)
+
+
 # ============================================================
 #  4. Main
 # ============================================================
-def main():
+def main(mode='with_abs'):
+    """Run angle-resolved scan.
+
+    mode = 'with_abs' : 100μm film with absorption (incoherent multiple reflections)
+    mode = 'no_abs'  : semi-infinite lossless film (no substrate absorption)
+    """
+    assert mode in ('with_abs', 'no_abs')
     print("=" * 64)
-    print("Angle-resolved T/R: Air|ZnO40|Ag10|ZnO10|Film100μm|Air")
+    print(f"Angle-resolved T/R: Air|ZnO40|Ag10|ZnO10|Film|Air  (mode={mode})")
     print("=" * 64)
 
     angles_deg = [0, 20, 40, 60, 80]
@@ -176,9 +134,9 @@ def main():
     print(f"    Angles: {angles_deg}")
 
     print("\n[2] Loading material data...")
-    n_ZnO, k_ZnO = build_nk_interpolators('ZnO', wl_grid)
-    n_Ag, k_Ag = build_nk_interpolators('Ag', wl_grid)
-    n_film, k_film = build_nk_interpolators('Film', wl_grid)
+    n_ZnO, k_ZnO = build_nk_interpolators('ZnO', wl_grid, DATA_DIR)
+    n_Ag, k_Ag = build_nk_interpolators('Ag', wl_grid, DATA_DIR)
+    n_film, k_film = build_nk_interpolators('Film', wl_grid, DATA_DIR)
     print(f"    ZnO  @0.55μm: n={np.interp(0.55, wl_grid, n_ZnO):.3f}, "
           f"k={np.interp(0.55, wl_grid, k_ZnO):.4f}")
     print(f"    Ag   @0.55μm: n={np.interp(0.55, wl_grid, n_Ag):.3f}, "
@@ -186,8 +144,15 @@ def main():
     print(f"    Film @0.55μm: n={np.interp(0.55, wl_grid, n_film):.3f}, "
           f"k={np.interp(0.55, wl_grid, k_film):.5f}")
 
-    print("\n[3] Computing spectra...")
-    out_dir = OUT_DIR
+    print(f"\n[3] Computing spectra (mode={mode})...")
+    if mode == 'with_abs':
+        out_dir = OUT_DIR
+        compute_fn = lambda wl, th, pol, i: compute_at(
+            wl, th, pol, n_ZnO[i], k_ZnO[i], n_Ag[i], k_Ag[i], n_film[i], k_film[i])
+    else:
+        out_dir = OUT_DIR.parent / 'angle_scan_spectra_no_film_abs'
+        compute_fn = lambda wl, th, pol, i: compute_at_no_abs(
+            wl, th, pol, n_ZnO[i], k_ZnO[i], n_Ag[i], k_Ag[i], n_film[i])
     out_dir.mkdir(parents=True, exist_ok=True)
 
     results = {}  # angle -> dict of arrays
@@ -197,12 +162,8 @@ def main():
         Rs = np.zeros_like(wl_grid)
         Rp = np.zeros_like(wl_grid)
         for i, wl in enumerate(wl_grid):
-            Ts[i], Rs[i] = compute_at(wl, theta, 's',
-                                      n_ZnO[i], k_ZnO[i], n_Ag[i], k_Ag[i],
-                                      n_film[i], k_film[i])
-            Tp[i], Rp[i] = compute_at(wl, theta, 'p',
-                                      n_ZnO[i], k_ZnO[i], n_Ag[i], k_Ag[i],
-                                      n_film[i], k_film[i])
+            Ts[i], Rs[i] = compute_fn(wl, theta, 's', i)
+            Tp[i], Rp[i] = compute_fn(wl, theta, 'p', i)
         T_unpol = 0.5 * (Ts + Tp)
         R_unpol = 0.5 * (Rs + Rp)
         results[theta] = dict(wl=wl_grid, Ts=Ts, Tp=Tp, T_unpol=T_unpol,
@@ -256,9 +217,13 @@ def main():
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=9)
 
-    fig.suptitle('Air | ZnO(40nm) | Ag(10nm) | ZnO(10nm) | Film(100μm) | Air\n'
+    if mode == 'with_abs':
+        subtitle = 'Film(100μm) | Air  —  with substrate absorption (incoherent)'
+    else:
+        subtitle = 'Film(semi-inf, lossless)  —  no substrate absorption (coherent)'
+    fig.suptitle('Air | ZnO(40nm) | Ag(10nm) | ZnO(10nm) | ' + subtitle + '\n'
                  'Unpolarized T & R vs wavelength at oblique incidence',
-                 fontsize=12)
+                 fontsize=11)
     plt.tight_layout()
     plot_path = out_dir / 'spectra_plot.png'
     plt.savefig(plot_path, dpi=150)
@@ -271,4 +236,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    mode = sys.argv[1] if len(sys.argv) > 1 else 'with_abs'
+    main(mode)

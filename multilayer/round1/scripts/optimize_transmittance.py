@@ -14,11 +14,17 @@ Data sources (../data/):
 """
 
 import numpy as np
-from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import matplotlib
-import pandas as pd
 from pathlib import Path
+
+import sys
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from multilayer.common.materials import build_nk_interpolators as _build_nk_common
 
 matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['font.size'] = 9
@@ -32,76 +38,13 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 DATA_DIR = Path(__file__).parent.parent / 'data'
 OUT_DIR = Path(__file__).parent.parent / 'rsl' / 'optimize_transmittance'
 
-# ============================================================
-#  1. Load material data
-# ============================================================
-def load_csv_two_section(filepath):
-    """Load a CSV that has two sections: wl,n then wl,k, separated by a header line."""
-    with open(filepath) as f:
-        lines = f.readlines()
-
-    sec1_start = None
-    sec2_start = None
-    for i, line in enumerate(lines):
-        if line.strip().startswith('wl,n') or line.strip().startswith('wl,n'):
-            sec1_start = i + 1
-        elif line.strip().startswith('wl,k') or line.strip().startswith('wl,k'):
-            sec2_start = i + 1
-
-    wl_n = []; n_vals = []
-    for line in lines[sec1_start:]:
-        line = line.strip()
-        if not line or line.startswith('wl'):
-            break
-        parts = line.split(',')
-        if len(parts) >= 2:
-            wl_n.append(float(parts[0]))
-            n_vals.append(float(parts[1]))
-
-    wl_k = []; k_vals = []
-    for line in lines[sec2_start:]:
-        line = line.strip()
-        if not line or line.startswith('wl'):
-            break
-        parts = line.split(',')
-        if len(parts) >= 2:
-            wl_k.append(float(parts[0]))
-            k_vals.append(float(parts[1]))
-
-    return (np.array(wl_n), np.array(n_vals)), (np.array(wl_k), np.array(k_vals))
-
-
-def load_material(name):
-    """Load n,k for a material. Returns (wl_n, n, wl_k, k) with full overlap range only."""
-    if name == 'Ag':
-        (wl_n, n), (wl_k, k) = load_csv_two_section(DATA_DIR / 'Ag.csv')
-    elif name == 'ZnO':
-        (wl_n, n), (wl_k, k) = load_csv_two_section(DATA_DIR / 'ZnO.csv')
-    elif name == 'Film':
-        df = pd.read_excel(DATA_DIR / '薄膜.xlsx', header=None)
-        vals = df.values
-        wl_n = vals[:, 0].astype(float)
-        n = vals[:, 1].astype(float)
-        k = vals[:, 2].astype(float)
-        wl_k = wl_n.copy()
-        return wl_n, n, wl_k, k
-    else:
-        raise ValueError(f"Unknown material: {name}")
-
-    return wl_n, n, wl_k, k
-
 
 def build_nk_interpolators(name, wl_grid):
-    """Build n(λ) and k(λ) interpolators on a common wavelength grid (in μm)."""
-    wl_n, n_raw, wl_k, k_raw = load_material(name)
+    """Load & interpolate nk on a wavelength grid (μm), from round1 data.
 
-    # Interpolate n and k to common grid, extrapolate with nearest
-    n_interp = interp1d(wl_n, n_raw, kind='linear',
-                        bounds_error=False, fill_value=(n_raw[0], n_raw[-1]))
-    k_interp = interp1d(wl_k, k_raw, kind='linear',
-                        bounds_error=False, fill_value=(k_raw[0], k_raw[-1]))
-
-    return n_interp(wl_grid), k_interp(wl_grid)
+    Delegates to multilayer.common.materials（收敛后的公共实现）。
+    """
+    return _build_nk_common(name, wl_grid, DATA_DIR)
 
 
 # ============================================================
