@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.special import j0  # 用于 Hankel 变换
 
 
@@ -88,14 +88,18 @@ class MultiLayerTM:
             As.append(0.5 * (H0 + factor * Q0))
             Bs.append(0.5 * (H0 - factor * Q0))
         # last semi‐infinite: only forward
-        As.append(Ss[-1][0]);
+        As.append(Ss[-1][0])
         Bs.append(0)
 
         self._As = As
         self._Bs = Bs
 
     def field_at(self, z):
-        """Return complex H(z) at arbitrary z."""
+        """Return complex H(z) at arbitrary z (z<0 属于入射介质)."""
+        if z < 0:
+            # 入射半空间：单位振幅前向波 + 反射波
+            return (np.exp(1j * self.kz0 * z)
+                    + self.reflection_coefficient() * np.exp(-1j * self.kz0 * z))
         # locate layer index
         if z < self.interfaces[-1]:
             idx = np.searchsorted(self.interfaces[1:], z, side='right')
@@ -136,7 +140,7 @@ class MultiLayerTM:
         out = []
         for v in values:
             setattr(self, param, v)
-            if param == 'wl':  # adjust k0[object Object]
+            if param == 'wl':  # 同步更新 k0
                 self.k0 = 2 * np.pi / self.wl
             self._update()
             out.append(self.field_intensity_at(z))
@@ -267,7 +271,7 @@ class MultiLayerTM:
         dks = np.diff(kx_vals)
         if not np.allclose(dks, dks[0], rtol=1e-6, atol=1e-12):
             raise ValueError("kx_vals 需要等间隔采样。")
-        dk = dks[0];
+        dk = dks[0]
         N = kx_vals.size
         dx = 2 * np.pi / (N * dk)
         x = (np.arange(N) - N // 2) * dx
@@ -338,7 +342,6 @@ class MultiLayerTM:
         if not np.allclose(dks, dks[0], rtol=1e-6, atol=1e-12):
             raise ValueError("kr 采样需等间隔（请用等步长的 kx_vals）。")
         dk = dks[0]
-        kmax = kr[-1]
 
         # r 网格：默认取到 ~ π/dk（与 1D 情况类似的 Nyquist 尺度）
         if r_max is None:

@@ -4,29 +4,32 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import SymLogNorm, LogNorm
-from typing import Optional, Tuple
+from matplotlib.colors import LogNorm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class Plotter:
-    def __init__(self, x, y, max_dpi=1024, wavelength=1.550):
+    def __init__(self, x, y, max_dpi=1024, wavelength=1.550, output_dir='./img'):
         """
         初始化绘图器。
 
         参数:
         x (ndarray): x轴坐标。
         y (ndarray): y轴坐标。
+        max_dpi (int): 保存图像的最大 DPI。
+        wavelength (float): 波长（仅用于动量空间角度刻度换算，需与仿真一致）。
+        output_dir (str): 图像输出目录（相对当前工作目录或绝对路径）。
         """
         self.x = x
         self.y = y
         self.max_dpi = max_dpi
         self.wavelength = wavelength
+        self.output_dir = output_dir
         logging.info("Plotter initialized with max_dpi=%d", max_dpi)
         # 检查文件夹是否存在，如果不存在则创建
-        if not os.path.exists('./img'):
-            os.makedirs('./img')
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
     def calculate_dynamic_dpi(self, data_shape, fig_size, sub_fig_num=16, up_sampling=1):
         """
@@ -76,9 +79,11 @@ class Plotter:
 
         plt.suptitle(title)
         plt.tight_layout()
+        # 先保存后显示：show 会阻塞并在窗口关闭后清理 figure，先 savefig 可避免存出空白图
+        plt.savefig(os.path.join(self.output_dir, f'{title.replace(" ", "_")}.png'), dpi=self.max_dpi)
         if show:
             plt.show()
-        plt.savefig(f'./img/{title.replace(" ", "_")}.png', dpi=self.max_dpi)
+        plt.close(fig)
 
     def plot_cross_sections(
             self,
@@ -110,7 +115,8 @@ class Plotter:
 
         total_plots_per_section = 4 if any(len(value) == 2 for value in cross_sections.values()) else 2
         fig, axes = plt.subplots(total_plots_per_section, num_sections, figsize=(4 * num_sections, 12))
-        axes = np.atleast_2d(axes)  # 确保axes是2维，即使只有一个截面
+        # 统一为 (行, 列) 二维索引：单截面时 subplots 返回一维数组，atleast_2d 会错误地变成 (1, N)
+        axes = np.asarray(axes).reshape(total_plots_per_section, -1)
 
 
         for i, (z, data) in enumerate(sorted(cross_sections.items())):
@@ -138,20 +144,28 @@ class Plotter:
                 intensity_k, phase_k = np.abs(U_k) ** 2, np.angle(U_k)
                 extent_k = [kx.min(), kx.max(), ky.min(), ky.max()]
                 yticks = np.linspace(ky.min(), ky.max(), 10)
-                yticklabels = np.round(np.arcsin(yticks/(2*np.pi/self.wavelength))*180/np.pi, 1)
+                # 角度换算 sinθ = ky/k0；|ky| 超出光锥（倏逝区）无实角度，标签置空
+                k0 = 2 * np.pi / self.wavelength
+                sin_theta = np.clip(yticks / k0, -1.0, 1.0)
+                angles = np.degrees(np.arcsin(sin_theta))
+                angles[~(np.abs(yticks) <= k0)] = np.nan  # 倏逝区刻度留空
 
-                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='rainbow', origin='lower', interpolation='nearest')
-                axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel=r'angle (\deg)')
+                im2 = axes[2][i].imshow(intensity_k, extent=extent_k, cmap='rainbow',
+                                        origin='lower', interpolation='nearest')
+                axes[2][i].set(title=f'momentum space intensity at z = {z:.2f}',
+                               xlabel='$k_x$ (rad/μm)', ylabel=r'angle (deg)')
                 # 设置 y 轴的刻度和标签
                 axes[2][i].set_yticks(yticks)  # 设置刻度位置
-                axes[2][i].set_yticklabels(yticklabels)  # 设置刻度标签
+                axes[2][i].set_yticklabels([f'{a:.1f}' if np.isfinite(a) else '' for a in angles])  # 设置刻度标签
                 plt.colorbar(im2, ax=axes[2][i])
 
-                im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight', origin='lower', interpolation='nearest')
-                axes[3][i].set(title=f'momentum space phase at z = {z:.2f}', xlabel='$k_x$ (rad/μm)', ylabel=r'angle (\deg)')
+                im3 = axes[3][i].imshow(phase_k, extent=extent_k, cmap='twilight',
+                                        origin='lower', interpolation='nearest')
+                axes[3][i].set(title=f'momentum space phase at z = {z:.2f}',
+                               xlabel='$k_x$ (rad/μm)', ylabel=r'angle (deg)')
                 # 设置 y 轴的刻度和标签
-                axes[2][i].set_yticks(yticks)  # 设置刻度位置
-                axes[2][i].set_yticklabels(yticklabels)  # 设置刻度标签
+                axes[3][i].set_yticks(yticks)  # 设置刻度位置
+                axes[3][i].set_yticklabels([f'{a:.1f}' if np.isfinite(a) else '' for a in angles])  # 设置刻度标签
                 plt.colorbar(im3, ax=axes[3][i])
 
         plt.tight_layout()
@@ -160,7 +174,7 @@ class Plotter:
         first_z, first_data = sorted(cross_sections.items())[0]
         first_U, first_x, first_y = first_data[0]
         fig_dpi = self.calculate_dynamic_dpi(first_U.shape, (4 * num_sections, 12))
-        plt.savefig(f'./img/{save_label}-cross_sections.png', dpi=fig_dpi)
+        plt.savefig(os.path.join(self.output_dir, f'{save_label}-cross_sections.png'), dpi=fig_dpi)
         if show:
             plt.show()
         plt.close(fig)
@@ -176,14 +190,14 @@ class Plotter:
             position: float = 0.0,
             save_label: str = 'default',
             show: bool = False,
-            norm_vmin: Optional[float] = None,
-            ref_position_min: Optional[float] = None,  # 归一化参考位置，取值范围 [0, 1]，用于动态确定 norm_vmin
-            ref_multiplier_min: Optional[float] = 1.0,  # 用于 norm_vmin 的倍数
-            norm_vmax: Optional[float] = None,
-            ref_position_max: Optional[float] = None,  # 归一化参考位置，取值范围 [0, 1]，用于动态确定 norm_vmax
-            ref_multiplier_max: Optional[float] = 1.0,  # 用于 norm_vmax 的倍数
-            figsize: Optional[Tuple[int, int]] = None,
-            dpi: Optional[int] = None
+            norm_vmin: float | None = None,
+            ref_position_min: float | None = None,  # 归一化参考位置，取值范围 [0, 1]，用于动态确定 norm_vmin
+            ref_multiplier_min: float | None = 1.0,  # 用于 norm_vmin 的倍数
+            norm_vmax: float | None = None,
+            ref_position_max: float | None = None,  # 归一化参考位置，取值范围 [0, 1]，用于动态确定 norm_vmax
+            ref_multiplier_max: float | None = 1.0,  # 用于 norm_vmax 的倍数
+            figsize: tuple[int, int] | None = None,
+            dpi: int | None = None
     ):
         """
         绘制纵截面光场的 intensity 和 phase。
@@ -229,7 +243,7 @@ class Plotter:
             # 设置 norm_vmin 基于参考位置的强度
             norm_vmin_dynamic = (max_ref_intensity_min / np.e ** 2) * ref_multiplier_min
             logging.info(
-                "Reference position min (normalized): %.2f, max intensity at reference min: %.3f, norm_vmin set to %.3f",
+                "Reference position min (normalized): %.2f, max intensity at ref: %.3f, norm_vmin=%.3f",
                 ref_position_min, max_ref_intensity_min, norm_vmin_dynamic)
             norm_vmin = norm_vmin_dynamic
         else:
@@ -252,7 +266,7 @@ class Plotter:
             # 设置 norm_vmax 基于参考位置的强度
             norm_vmax_dynamic = (max_ref_intensity_max) * ref_multiplier_max
             logging.info(
-                "Reference position max (normalized): %.2f, max intensity at reference max: %.3f, norm_vmax set to %.3f",
+                "Reference position max (normalized): %.2f, max intensity at ref: %.3f, norm_vmax=%.3f",
                 ref_position_max, max_ref_intensity_max, norm_vmax_dynamic)
             norm_vmax = norm_vmax_dynamic
         else:
@@ -264,25 +278,25 @@ class Plotter:
         fig, axes = plt.subplots(2, 1, figsize=figsize)
         xlabel = 'y' if direction == 'x' else 'x'
 
-        # 获取并设置 colormap 的 'under' 颜色
-        cmap = plt.get_cmap('rainbow').copy()  # 复制以避免修改全局 colormap
+        # 获取并设置 colormap 的 'under' 颜色（LogNorm 低于 vmin 的区域显示为黑色）
+        cmap = plt.colormaps['rainbow'].copy()  # 复制以避免修改全局 colormap
         cmap.set_under('black')  # 设置 'under' 颜色
 
-        # 确保 norm_vmin < norm_vmax
-        if norm_vmin >= norm_vmax:
-            logging.error("norm_vmin (%.3f) must be less than norm_vmax (%.3f)", norm_vmin, norm_vmax)
-            # raise ValueError("norm_vmin 必须小于 norm_vmax")
-            norm_vmin = 0
+        # 确保 norm_vmin < norm_vmax（LogNorm 要求 vmin > 0）
+        if not (0 < norm_vmin < norm_vmax):
+            logging.error("Invalid LogNorm range (vmin=%.3g, vmax=%.3g)，回退为线性显示", norm_vmin, norm_vmax)
+            norm = None
+        else:
+            norm = LogNorm(vmin=norm_vmin, vmax=norm_vmax)
 
         im0 = axes[0].imshow(
             intensity,
             extent=[z_coords.min(), z_coords.max(), coord_axis.min(), coord_axis.max()],
             aspect='auto',
-            cmap='rainbow',
+            cmap=cmap,
             origin='lower',
             interpolation='nearest',
-            # norm=LogNorm(vmin=norm_vmin, vmax=norm_vmax),  # 使用 LogNorm
-            # norm=SymLogNorm(vmin=norm_vmin, vmax=norm_vmax, linthresh=norm_vmin, linscale=1),  # 使用 SymLogNorm
+            norm=norm,  # 对数显示：低于 1/e² (或参考阈值) 的区域压暗
         )
         axes[0].set(title=f'Longitudinal Intensity at {direction} = {position}', xlabel='z', ylabel=xlabel)
         plt.colorbar(im0, ax=axes[0])
@@ -300,7 +314,7 @@ class Plotter:
 
         plt.tight_layout()
         save_dpi = dpi if dpi is not None else self.calculate_dynamic_dpi(intensity.shape, figsize)
-        save_path = f'./img/{save_label}-longitudinal_section.png'
+        save_path = os.path.join(self.output_dir, f'{save_label}-longitudinal_section.png')
         plt.savefig(save_path, dpi=save_dpi)
         if show:
             plt.show()

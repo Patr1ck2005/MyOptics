@@ -1,5 +1,5 @@
 # optical_system/elements.py
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 import cupy as cp
 from scipy.interpolate import RegularGridInterpolator
@@ -181,10 +181,19 @@ class SpatialLightModulator(SpatialPlate):
         """
         super().__init__(z_position=z_position,
                          modulation_function=modulation_function)
-        # self.modulation_function = modulation_function
         self.modulation_array = modulation_array
         self.mod_x = mod_x
         self.mod_y = mod_y
+        # 插值器只构建一次并缓存（每次 apply 重建的开销在大网格下不可接受）
+        self._interpolator = None
+        if (self.modulation_array is not None
+                and self.mod_x is not None and self.mod_y is not None):
+            mod_array_cpu = cp.asnumpy(self.modulation_array)
+            mod_x_cpu = cp.asnumpy(self.mod_x)
+            mod_y_cpu = cp.asnumpy(self.mod_y)
+            self._interpolator = RegularGridInterpolator(
+                (mod_y_cpu, mod_x_cpu), mod_array_cpu,
+                bounds_error=False, fill_value=0)
 
     def _get_modulation(self, x, y):
         # 如果有函数定义，则直接计算
@@ -192,25 +201,18 @@ class SpatialLightModulator(SpatialPlate):
             X, Y = cp.meshgrid(x, y)
             return self.modulation_function(X, Y)
 
-        # 否则，如果有调制数组和坐标，则使用插值
-        if self.modulation_array is not None and self.mod_x is not None and self.mod_y is not None:
-            # 由于插值在CPU上，需先将数据转移到CPU
-            mod_array_cpu = cp.asnumpy(self.modulation_array)
-            mod_x_cpu = cp.asnumpy(self.mod_x)
-            mod_y_cpu = cp.asnumpy(self.mod_y)
-            interp = RegularGridInterpolator((mod_y_cpu, mod_x_cpu), mod_array_cpu, bounds_error=False, fill_value=0)
-
-            # 创建待插值点阵列
+        # 否则，如果有调制数组和坐标，则使用缓存的插值器
+        if self._interpolator is not None:
             X, Y = cp.meshgrid(x, y)
             points = cp.stack([Y.ravel(), X.ravel()], axis=-1)
             points_cpu = cp.asnumpy(points)
 
             # 插值到目标坐标
-            mod_values = interp(points_cpu).reshape(Y.shape)
+            mod_values = self._interpolator(points_cpu).reshape(Y.shape)
             return cp.asarray(mod_values)
 
         # 如果既没有函数也没有数组，则不做调制
-        return cp.ones((y.size, x.size), dtype=cp.float32)
+        return cp.ones((y.size, x.size), dtype=cp.float64)
 
     def apply(self, U, x, y, wavelength):
         modulation = self._get_modulation(x, y)
@@ -234,39 +236,33 @@ class MomentumSpaceModulator(MomentumSpacePlate):
         """
         super().__init__(z_position=z_position,
                          modulation_function=modulation_function)
-        # self.modulation_function = modulation_function
         self.modulation_array = modulation_array
         self.mod_kx = mod_kx
         self.mod_ky = mod_ky
+        # 插值器只构建一次并缓存
+        self._interpolator_k = None
+        if (self.modulation_array is not None
+                and self.mod_kx is not None and self.mod_ky is not None):
+            mod_array_cpu = cp.asnumpy(self.modulation_array)
+            mod_kx_cpu = cp.asnumpy(self.mod_kx)
+            mod_ky_cpu = cp.asnumpy(self.mod_ky)
+            self._interpolator_k = RegularGridInterpolator(
+                (mod_ky_cpu, mod_kx_cpu), mod_array_cpu,
+                bounds_error=False,
+                method='cubic',
+                fill_value=1.0)
 
     def _get_modulation_k(self, KX, KY):
         # 如果有函数定义，则直接计算
         if self.modulation_function is not None:
             return self.modulation_function(KX, KY)
 
-        # 如果有给定的调制数组和对应动量坐标，则插值
-        if self.modulation_array is not None and self.mod_kx is not None and self.mod_ky is not None:
-            # # 频域坐标变换
-            # KX = cp.fft.fftshift(KX)
-            # KY = cp.fft.fftshift(KY)
-
-            mod_array_cpu = cp.asnumpy(self.modulation_array)
-            mod_kx_cpu = cp.asnumpy(self.mod_kx)
-            mod_ky_cpu = cp.asnumpy(self.mod_ky)
-            interp = RegularGridInterpolator((mod_ky_cpu, mod_kx_cpu), mod_array_cpu,
-                                             bounds_error=False,
-                                             method='cubic',
-                                             # method='linear',
-                                             fill_value=1.0)
-
+        # 如果有给定的调制数组和对应动量坐标，则使用缓存的插值器
+        if self._interpolator_k is not None:
             points = cp.stack([KY.ravel(), KX.ravel()], axis=-1)
             points_cpu = cp.asnumpy(points)
-            mod_values = interp(points_cpu).reshape(KY.shape)
-
-            # 频域坐标变换
-            mod_values = cp.asarray(mod_values)
-            # mod_values = cp.fft.ifftshift(mod_values)
-            return mod_values
+            mod_values = self._interpolator_k(points_cpu).reshape(KY.shape)
+            return cp.asarray(mod_values)
 
         # 如果既没有函数也没有数组，则不做调制
         return cp.ones_like(KX)
@@ -289,13 +285,14 @@ class MomentumSpaceModulator(MomentumSpacePlate):
 
 
 class Aperture(OpticalElement):
-    def __init__(self, z_position, size):
+    def __init__(self, z_position, size=None):
         """
         初始化光阑基类。
 
         参数:
         z_position (float): 光阑在z轴上的位置。
-        radius (float): 光阑的半径（或半边长）。
+        size (float, optional): 光阑的通用尺寸（圆形/方形光阑的半径或半边长）。
+            仅使用自定义形状参数的光阑子类可不传。
         """
         super().__init__(z_position)
         self.size = size
@@ -330,9 +327,3 @@ class Aperture(OpticalElement):
         X, Y = cp.meshgrid(x, y)
         aperture_mask = self.create_mask(X, Y)
         return U * aperture_mask
-
-
-
-from optical_system.elements.grating import *
-from optical_system.elements.apertures import *
-from optical_system.elements.lens import *

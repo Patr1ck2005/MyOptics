@@ -6,17 +6,18 @@ from typing import Literal
 
 import cupy as cp
 import numpy as np
+from tqdm import tqdm
+
 from optical_system.elements_cls import OpticalElement
 from propagation.angular_spectrum import angular_spectrum_propagate
 from utils.constants import PI
-from tqdm import tqdm
 
 # 配置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class OpticalSystem:
-    def __init__(self, wavelength, x, y, initial_field):
+    def __init__(self, wavelength, x, y, initial_field, dtype=cp.complex128):
         """
         初始化光学系统。
 
@@ -25,14 +26,15 @@ class OpticalSystem:
         x (ndarray): x轴坐标。
         y (ndarray): y轴坐标。
         initial_field (ndarray): 初始光场。
+        dtype: 光场复数精度，默认 cp.complex128（研究精度优先）；
+               大网格显存吃紧时可显式传 cp.complex64 换取速度/显存。
         """
         self.wavelength = wavelength
-        self.x = cp.array(x, dtype=cp.float32)  # 转换为CuPy数组
-        self.y = cp.array(y, dtype=cp.float32)  # 转换为CuPy数组
-        self.U = cp.array(initial_field, dtype=cp.complex64)  # 转换为CuPy数组
-        # self.x = cp.array(x, dtype=cp.float64)  # 转换为CuPy数组
-        # self.y = cp.array(y, dtype=cp.float64)  # 转换为CuPy数组
-        # self.U = cp.array(initial_field, dtype=cp.complex128)  # 转换为CuPy数组
+        real_dtype = cp.float64 if dtype == cp.complex128 else cp.float32
+        self.dtype = dtype
+        self.x = cp.array(x, dtype=real_dtype)
+        self.y = cp.array(y, dtype=real_dtype)
+        self.U = cp.array(initial_field, dtype=dtype)
         self.dx = x[1] - x[0]
         self.dy = y[1] - y[0]
         self.Lx = x[-1] - x[0]
@@ -138,7 +140,6 @@ class OpticalSystem:
                 logging.info("Propagating from z=%.2f to z=%.2f", current_z, z)
                 current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength,
                                                        propagation_mode=propagation_mode)
-                print(z_prop, cp.max(current_U))
                 current_z = z
 
             if return_momentum_space_spectrum:
@@ -225,7 +226,6 @@ class OpticalSystem:
                 # 使用横截面传播函数进行纵向传播
                 U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength,
                                                      propagation_mode=propagation_mode)
-                print(cp.max(U_cross))
                 current_z = z
 
             # 切片纵截面光场
@@ -294,7 +294,6 @@ class OpticalSystem:
                 # 使用横截面传播函数进行纵向传播
                 U_cross = angular_spectrum_propagate(U_0, x, y, z_prop, wavelength,
                                                      propagation_mode=propagation_mode)
-                print(z_prop, cp.max(U_cross))
 
             # 切片纵截面光场
             if direction == 'x':

@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 # ---------------------- 参数定义 ----------------------
 
@@ -67,16 +67,16 @@ for ri in r:
 # U *= (1 / (1j * wavelength * z1)) * (1 / (1j * wavelength * z2))
 
 # 计算光强
-I = np.abs(U)**2
+intensity = np.abs(U)**2
 
 # 归一化光强
-I /= np.max(I)
+intensity /= np.max(intensity)
 
 # ---------------------- 可视化 ----------------------
 
 plt.figure(figsize=(8, 6))
 extent = [-x_max*100, x_max*100, -y_max*100, y_max*100]  # 转换为厘米
-plt.imshow(I, extent=extent, cmap='inferno')
+plt.imshow(intensity, extent=extent, cmap='inferno')
 plt.title('衍射光强分布 (观察平面距离圆孔 10 cm)')
 plt.xlabel('x (cm)')
 plt.ylabel('y (cm)')

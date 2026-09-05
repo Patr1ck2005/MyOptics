@@ -1,5 +1,7 @@
-from optical_system.elements_cls import Aperture
 import cupy as cp
+
+from optical_system.elements_cls import Aperture
+
 
 class CircularAperture(Aperture):
     def __init__(self, z_position, radius):
@@ -27,6 +29,16 @@ class CircularAperture(Aperture):
 
 
 class SquareAperture(Aperture):
+    def __init__(self, z_position, size):
+        """
+        初始化方形光阑。
+
+        参数:
+        z_position (float): 光阑在z轴上的位置。
+        size (float): 光阑的半边长。
+        """
+        super().__init__(z_position=z_position, size=size)
+
     def create_mask(self, X, Y):
         """
         创建方形光阑的遮挡掩膜。
@@ -51,7 +63,7 @@ class EllipticalAperture(Aperture):
         radius_x (float): 椭圆形光阑在x轴的半径。
         radius_y (float): 椭圆形光阑在y轴的半径。
         """
-        super().__init__(z_position, radius=None)
+        super().__init__(z_position)
         self.radius_x = radius_x
         self.radius_y = radius_y
 
@@ -75,7 +87,7 @@ class RectangularAperture(Aperture):
         width (float): 矩形光阑的宽度。
         height (float): 矩形光阑的高度。
         """
-        super().__init__(z_position, radius=None)
+        super().__init__(z_position)
         self.width = width
         self.height = height
 
@@ -98,7 +110,7 @@ class CrossAperture(Aperture):
         z_position (float): 光阑在z轴上的位置。
         arm_width (float): 十字形光阑的臂宽。
         """
-        super().__init__(z_position, radius=None)
+        super().__init__(z_position)
         self.arm_width = arm_width
 
     def create_mask(self, X, Y):
@@ -121,7 +133,7 @@ class AnnularAperture(Aperture):
         inner_radius (float): 环形光阑的内半径。
         outer_radius (float): 环形光阑的外半径。
         """
-        super().__init__(z_position, radius=None)
+        super().__init__(z_position)
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
 

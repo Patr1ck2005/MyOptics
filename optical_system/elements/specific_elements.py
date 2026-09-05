@@ -1,16 +1,17 @@
-import numpy as np
-import cupy as cp
-
-from optical_system.elements_cls import MomentumSpacePlate, MomentumSpaceModulator
-from utils.constants import PI
-
 import os
 
-# 获取当前文件 (element.py) 所在目录的路径
+import cupy as cp
+import numpy as np
+
+from optical_system.elements_cls import MomentumSpaceModulator, MomentumSpacePlate
+from utils.constants import PI
+
+# 获取当前文件所在目录的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# 构建 data 文件夹中 efficiency.npy 的绝对路径
-data_path = lambda file_name: os.path.join(current_dir, "data", file_name)
+# 构建数据文件的绝对路径（数据位于包级目录 optical_system/data/，即本文件目录的上一级）
+def data_path(file_name):
+    return os.path.join(current_dir, "..", "data", file_name)
 
 
 class SimpleMSPP(MomentumSpacePlate):
