@@ -1,4 +1,9 @@
-"""pytest 共享 fixture 与 GPU 可用性检测。"""
+"""pytest 共享 fixture 与 GPU 可用性检测。
+
+GPU 测试统一使用 ``@pytest.mark.gpu`` 标记（在 pyproject.toml 注册）。
+GPU 不可用时由 pytest_collection_modifyitems 自动跳过 gpu 标记的用例；
+CI 的 gpu job 用 ``pytest -m gpu`` 只选 GPU 用例，CPU job 用 ``-m "not gpu"``。
+"""
 import sys
 from pathlib import Path
 
@@ -24,4 +29,12 @@ def _gpu_available() -> bool:
 
 GPU_OK = _gpu_available()
 
-requires_gpu = pytest.mark.skipif(not GPU_OK, reason="CuPy GPU 内核链不可用（缺 CUDA/nvrtc）")
+
+def pytest_collection_modifyitems(config, items):
+    """GPU 不可用时自动跳过所有 gpu 标记的用例。"""
+    if GPU_OK:
+        return
+    skip = pytest.mark.skip(reason="CuPy GPU 内核链不可用（缺 CUDA/nvrtc）")
+    for item in items:
+        if "gpu" in item.keywords:
+            item.add_marker(skip)

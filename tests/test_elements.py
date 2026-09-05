@@ -1,7 +1,6 @@
 """元件构造与掩膜/调制行为回归。"""
 import cupy as cp
 import pytest
-from conftest import requires_gpu
 
 from optical_system.elements import (
     AnnularAperture,
@@ -32,7 +31,7 @@ def test_aperture_constructions():
     AnnularAperture(0, inner_radius=0.5, outer_radius=1.0)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_circular_aperture_mask():
     ap = CircularAperture(0, radius=2.0)
     x = cp.linspace(-5, 5, 101)
@@ -42,7 +41,7 @@ def test_circular_aperture_mask():
     assert not mask[0, 50]  # 边缘遮挡
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_lens_phase_and_na_mask():
     f, wl = 100.0, 0.5
     lens = Lens(0, focal_length=f, NA=0.42)
@@ -58,7 +57,7 @@ def test_lens_phase_and_na_mask():
     assert cp.all(cp.abs(out[r_edge]) == 0)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_object_lens_nonparaxial_phase():
     f, wl = 4000.0, 1.55
     ol = ObjectLens(0, focal_length=f, NA=0.42)
@@ -73,7 +72,7 @@ def test_object_lens_nonparaxial_phase():
     assert cp.allclose(unit, 1.0, atol=1e-6)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_gratings_modulation():
     x = cp.linspace(-10, 10, 401)
     X, Y = cp.meshgrid(x, x)
@@ -96,7 +95,7 @@ def test_gratings_modulation():
     assert cp.allclose(cp.abs(out), 1.0)  # 纯相位
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_axicon_geometry_consistency():
     ax = Axicon(0, base_angle=0.1, refractive_index=1.5)
     assert ax.apex_angle == pytest.approx(cp.pi - 2 * 0.1)
@@ -104,7 +103,7 @@ def test_axicon_geometry_consistency():
         Axicon(0)  # 未提供角度必须报错
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_momentum_space_plate_vortex():
     """动量空间涡旋相位板：输出场中心应为相位奇点（强度为零）。
 
@@ -127,7 +126,7 @@ def test_momentum_space_plate_vortex():
     assert center < 1e-9 * peak
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_simple_mspp_masks_evanescent():
     """SimpleMSPP 在光锥外应调制为 0（倏逝波滤除）。"""
     wl, charge = 1.55, 2

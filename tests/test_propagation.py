@@ -2,14 +2,13 @@
 import cupy as cp
 import numpy as np
 import pytest
-from conftest import requires_gpu
 
 from optical_system.elements import CircularAperture, Lens, SpatialPlate
 from optical_system.system import OpticalSystem
 from utils.constants import PI
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_free_propagation_energy_conservation():
     """自由空间传播守恒 sum|U|^2（角谱传播是幺正的）。"""
     wl = 0.8
@@ -24,7 +23,7 @@ def test_free_propagation_energy_conservation():
     assert e1 == pytest.approx(e0, rel=1e-6)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_plane_wave_longitudinal_phase():
     """平面波传播 z 后应获得相位 exp(i k z)。"""
     wl, z = 1.0, 7.3
@@ -38,7 +37,7 @@ def test_plane_wave_longitudinal_phase():
     assert measured == pytest.approx(expected_phase, abs=1e-6)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_lens_focus_position():
     """平行光经透镜后应在 z≈f 处聚焦（强度峰值位置）。"""
     wl, f = 1.0, 200.0
@@ -56,7 +55,7 @@ def test_lens_focus_position():
     assert abs(focus_z - (f / 2 + f)) < 0.06 * f
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_element_sorting_by_z():
     """元件应按 z_position 排序，且同 z 保持插入顺序。"""
     x = np.linspace(-10, 10, 33)
@@ -72,7 +71,7 @@ def test_element_sorting_by_z():
     assert system.elements[1] is a1 and system.elements[2] is a3  # 同 z 稳定排序
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_cross_section_at_zero_returns_normalized_initial_field():
     x = np.linspace(-10, 10, 65)
     X, Y = np.meshgrid(x, x)
@@ -84,7 +83,7 @@ def test_cross_section_at_zero_returns_normalized_initial_field():
     assert np.allclose(xr, x) and np.allclose(yr, x)
 
 
-@requires_gpu
+@pytest.mark.gpu
 def test_dtype_parameter():
     """默认 complex128；显式 complex64 生效。"""
     x = np.linspace(-10, 10, 33)
