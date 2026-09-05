@@ -39,8 +39,9 @@ pip install -e .
 ```
 
 > **GPU note**: CuPy 13 + the `nvidia-*-cu12` pip wheels provide the full CUDA runtime
-> (NVRTC, cuFFT, cuBLAS…). You only need a working NVIDIA driver. If you prefer a system
-> CUDA Toolkit, install one matching your driver and the wheels will still work.
+> (NVRTC, cuFFT, cuBLAS…). You only need a working NVIDIA driver. On Windows, cupy's wheel
+> does not auto-discover the pip-installed libraries — this repository handles it via
+> `utils/cuda_path.py`, which runs automatically when `optical_system` is imported.
 
 ## Project Layout 🗂️
 

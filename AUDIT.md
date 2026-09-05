@@ -52,8 +52,11 @@
   （`cp.exp` / `cp.meshgrid` / `np.arctan2` on cupy 数组）均抛
   `RuntimeError: CuPy failed to load nvrtc64_120_0.dll`——
   本机无 CUDA Toolkit（`CUDA_PATH` 空、无 nvcc），cupy 轮子不带 CUDA 运行库。
-- 修复：安装 `nvidia-*-cu12` pip 轮子（CuPy 13 官方支持方式），并写入 requirements；
-  README 注明无需单独安装 CUDA Toolkit。
+- 修复（两步）：
+  1. 安装 `nvidia-*-cu12` pip 轮子（CUDA 12 运行库，写入 requirements）；
+  2. cupy 的 Windows 轮子**不会自动发现** pip 装的 `nvidia/*/bin` 目录——
+     新增 `utils/cuda_path.py`（`add_dll_directory` + PATH 前置双通道），
+     在 `optical_system` 包导入时执行。实测 RTX 4060 上 NVRTC/cuFFT 全链路可用。
 
 ### P0-5 ✅ `np.*` ufunc 直接作用于 cupy 数组
 - 位置：11 处脚本（`vortex_beam-OL-study.py` 等）的调制函数 lambda
