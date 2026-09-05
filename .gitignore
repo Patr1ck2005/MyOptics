@@ -1,39 +1,48 @@
-# 忽略所有隐藏文件夹
-.*
-!.gitignore
+# ===== Python 运行产物 =====
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
 
-# Logs
-####################
+# ===== IDE =====
+.idea/
+.vscode/
+
+# ===== 日志 =====
 logs/
 *.log
 
-*.pyc
-
-*.xlsx
-
-# 忽略所有图片文件
+# ===== 输出图像与压缩包（结果不跟踪） =====
+img/
 *.png
 *.jpg
 *.bmp
+*.zip
+*.rar
 
-# 忽略文件
+# ===== 数据文件（默认忽略，源数据用 ! 例外纳入版本控制） =====
 *.npy
-*.npz
-*.fsp
+!optical_system/data/*.npy
+
+*.csv
+!multilayer/round1/data/*.csv
+!multilayer/round2/data/*.csv
+
+*.xlsx
+!multilayer/round1/data/*.xlsx
+!multilayer/round2/data/*.xlsx
+
 *.txt
 !requirements.txt
+
+*.npz
+*.fsp
 *.json
 *.lsf
 *.mat
 *.h5
 *.pkl
-*.csv
-*.zip
-*.rar
 *.pov
 
-# 忽略多个文件夹
+# ===== 杂项 =====
 my_folder/
-.idea/
-
-
