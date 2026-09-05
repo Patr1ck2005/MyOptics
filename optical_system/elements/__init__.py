@@ -20,6 +20,7 @@ from optical_system.elements.grating import (
     SinePhaseGrating,
 )
 from optical_system.elements.lens import Axicon, ObjectLens
+from optical_system.elements.multilayer_slab import MultilayerSlab
 from optical_system.elements.specific_elements import MSPP, SimpleMSPP
 from optical_system.elements_cls import (
     Aperture,
@@ -58,4 +59,6 @@ __all__ = [
     "RectAmplitudeGrating",
     "SineAmplitudeGrating",
     "BlazedGrating",
+    # 多层膜
+    "MultilayerSlab",
 ]

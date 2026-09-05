@@ -25,8 +25,17 @@ def kz_of(N_j, k0, kx):
     return _kz_physical(np.lib.scimath.sqrt(N_j ** 2 * k0 ** 2 - kx ** 2))
 
 
-def _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit, kz_inc, kz_exit, kz_layers, pol):
-    """核心矩阵级联，由已算好的各层 kz 驱动（tmm_kx / tmm_k2 共用）。"""
+def _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit, kz_inc, kz_exit, kz_layers, pol,
+            return_amplitude=False):
+    """核心矩阵级联，由已算好的各层 kz 驱动（tmm_kx / tmm_k2 共用）。
+
+    return_amplitude=True 时返回复数场振幅比 t_amp（透射场/入射场，含相位）
+    与 r_amp（反射场/入射场），供动量空间传函 H(k) 使用。
+    注意 t_amp 是"透射侧场振幅/入射侧场振幅"——跨介质时需乘导纳比
+    才是能流比；作为场传递函数（同一套角谱 U 的乘性因子）时，
+    直接使用 t_amp 会破坏能量口径，故 H 的正确构造是
+    t_amp × sqrt(Re(Y_exit)/Re(Y_inc))（能流归一的场比）。
+    """
     if pol not in ("s", "p"):
         raise ValueError(f"pol must be 's' or 'p', got {pol!r}")
 
@@ -55,6 +64,9 @@ def _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit, kz_inc, kz_exit, kz_layer
     denom = Y0 * m11 + Y0 * Ys * m12 + m21 + Ys * m22
     r = (Y0 * m11 + Y0 * Ys * m12 - m21 - Ys * m22) / denom
     t = 2.0 * Y0 / denom
+
+    if return_amplitude:
+        return complex(t), complex(r)
 
     reY0 = np.real(Y0)
     T = (np.real(Ys) / reY0) * np.abs(t) ** 2 if reY0 > 0 else 0.0
@@ -98,6 +110,31 @@ def tmm_kx(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx, pol="s"):
 
     return _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit,
                    kz_inc, kz_exit, kz_layers, pol)
+
+
+def tmm_k2_amplitudes(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx2, pol="s"):
+    """
+    Coherent TMM returning complex field amplitude ratios (t_amp, r_amp).
+
+    t_amp: 透射侧出射场振幅 / 入射侧场振幅（含膜堆相位）。
+    r_amp: 反射场振幅 / 入射场振幅。
+    供动量空间传函构造；能量口径的能流归一由调用方完成。
+    """
+    if kx2 < 0:
+        raise ValueError(f"kx2 must be non-negative, got {kx2}")
+    k0 = 2.0 * np.pi / (wl_um * 1000.0)  # 1/nm
+
+    def kz_of_k2(N_j):
+        return _kz_physical(np.lib.scimath.sqrt(N_j ** 2 * k0 ** 2 - kx2))
+
+    kz_inc = kz_of_k2(N_inc)
+    if kz_inc == 0:
+        return 0j, (-1.0 + 0j)  # 掠入射临界极限：t→0，r→-1
+    kz_exit = kz_of_k2(N_exit)
+    kz_layers = [kz_of_k2(N_j) for N_j in N_layers]
+
+    return _tmm_kz(wl_um, N_layers, d_nm_list, N_inc, N_exit,
+                   kz_inc, kz_exit, kz_layers, pol, return_amplitude=True)
 
 
 def tmm_k2(wl_um, N_layers, d_nm_list, N_inc, N_exit, kx2, pol="s"):
