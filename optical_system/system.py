@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from optical_system.elements_cls import OpticalElement
-from propagation.angular_spectrum import angular_spectrum_propagate
+from propagation.propagator import AngularSpectrumPropagator
 from utils.constants import PI
 
 # 配置日志记录
@@ -116,6 +116,9 @@ class OpticalSystem:
         x, y = self.x, self.y
         wavelength = self.wavelength
 
+        # 缓存传播器：整个调用共享一份 kz/网格缓存
+        propagator = AngularSpectrumPropagator(x, y, wavelength, mode=propagation_mode)
+
         sorted_z = np.sort(z_positions).tolist()
         logging.info("Starting propagation to cross sections at z positions: %s", sorted_z)
 
@@ -126,8 +129,7 @@ class OpticalSystem:
                 z_prop = self.element_positions[element_index] - current_z
                 if z_prop > 0:
                     logging.info("Propagating from z=%.2f to z=%.2f", current_z, self.element_positions[element_index])
-                    current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength,
-                                                           propagation_mode=propagation_mode)
+                    current_U = propagator.propagate(current_U, z_prop)
                 # 应用光学元件
                 logging.info("Applying optical element at z=%.2f", self.element_positions[element_index])
                 current_U = self.elements[element_index].apply(U=current_U, x=x, y=y, wavelength=wavelength)
@@ -138,8 +140,7 @@ class OpticalSystem:
             z_prop = z - current_z
             if z_prop > 0:
                 logging.info("Propagating from z=%.2f to z=%.2f", current_z, z)
-                current_U = angular_spectrum_propagate(current_U, x, y, z_prop, wavelength,
-                                                       propagation_mode=propagation_mode)
+                current_U = propagator.propagate(current_U, z_prop)
                 current_z = z
 
             if return_momentum_space_spectrum:
@@ -197,6 +198,9 @@ class OpticalSystem:
         x, y = self.x, self.y
         wavelength = self.wavelength
 
+        # 缓存传播器：数百步纵向扫描共享一份 kz/网格缓存（主要提速点）
+        propagator = AngularSpectrumPropagator(x, y, wavelength, mode=propagation_mode)
+
         U_cross = self.U.copy()
 
         start_time = time.time()
@@ -211,8 +215,7 @@ class OpticalSystem:
                     z_prop_to_elem = z_elem - current_z
                     if z_prop_to_elem > 0:
                         logging.info("Propagating from z=%.2f to z=%.2f", current_z, z_elem)
-                        U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop_to_elem, wavelength,
-                                                             propagation_mode=propagation_mode)
+                        U_cross = propagator.propagate(U_cross, z_prop_to_elem)
                         current_z = z_elem
 
                 # 应用光学元件
@@ -224,8 +227,7 @@ class OpticalSystem:
 
             if z_prop > 0:
                 # 使用横截面传播函数进行纵向传播
-                U_cross = angular_spectrum_propagate(U_cross, x, y, z_prop, wavelength,
-                                                     propagation_mode=propagation_mode)
+                U_cross = propagator.propagate(U_cross, z_prop)
                 current_z = z
 
             # 切片纵截面光场
@@ -283,6 +285,8 @@ class OpticalSystem:
         x, y = self.x, self.y
         wavelength = self.wavelength
 
+        propagator = AngularSpectrumPropagator(x, y, wavelength, mode=propagation_mode)
+
         U_0 = self.U.copy()
         U_cross = self.U.copy()
 
@@ -292,8 +296,7 @@ class OpticalSystem:
 
             if z_prop > 0:
                 # 使用横截面传播函数进行纵向传播
-                U_cross = angular_spectrum_propagate(U_0, x, y, z_prop, wavelength,
-                                                     propagation_mode=propagation_mode)
+                U_cross = propagator.propagate(U_0, z_prop)
 
             # 切片纵截面光场
             if direction == 'x':

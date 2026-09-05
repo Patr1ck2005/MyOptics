@@ -54,4 +54,5 @@ testpaths = ["tests"]
 addopts = "-q"
 markers = [
     "gpu: 需要 CuPy GPU 内核链（无 GPU 环境自动跳过；CI 用 -m gpu / -m 'not gpu' 选择）",
+    "slow: 长耗时性能对照用例（信息性断言，防意外退化）",
 ]
