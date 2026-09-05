@@ -1,11 +1,11 @@
 """MultilayerSlab：多层膜 × 角谱耦合的验收测试链。"""
 import numpy as np
 import pytest
-
 from conftest import GPU_OK
 
 if GPU_OK:
     import cupy as cp
+
     from optical_system.elements import MultilayerSlab
     from optical_system.system import OpticalSystem
     from utils.constants import PI

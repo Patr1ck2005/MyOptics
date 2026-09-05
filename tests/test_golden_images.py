@@ -13,11 +13,10 @@ import os
 
 import numpy as np
 import pytest
-
 from conftest import GPU_OK
 
 if GPU_OK:
-    import cupy as cp
+    pass
 
 pytestmark = pytest.mark.gpu
 

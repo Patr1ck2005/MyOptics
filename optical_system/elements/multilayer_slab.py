@@ -20,9 +20,8 @@
 - 标量框架的偏振：polarization 只能选 's' 或 'p'（非偏振光 = 两种偏振
   各跑一次后对强度取平均，复振幅平均无物理意义）。
 """
-import numpy as np
-
 import cupy as cp
+import numpy as np
 
 from multilayer.common.tmm import tmm_k2_amplitudes
 from optical_system.elements_cls import OpticalElement

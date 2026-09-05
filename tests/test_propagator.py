@@ -5,10 +5,8 @@ import cupy as cp
 import numpy as np
 import pytest
 
-from optical_system.system import OpticalSystem
 from propagation.angular_spectrum import angular_spectrum_propagate
 from propagation.propagator import AngularSpectrumPropagator
-from utils.constants import PI
 
 
 def _make_field(nx=129, ny=129, waist=5.0):
