@@ -2,93 +2,106 @@
 
 ## Overview 🌟
 
-MyOptics is a Python-based 🐍 framework for Fourier optics simulation, designed to model and analyze light 💡 propagation through optical elements. The project uses the Angular Spectrum Method for precise simulation, allowing for visualization of complex field distributions and interactions in optical systems.
+MyOptics is a Python-based 🐍 framework for Fourier optics simulation, designed to model and
+analyze light 💡 propagation through optical elements. The project uses the Angular Spectrum
+Method for precise simulation, allowing for visualization of complex field distributions and
+interactions in optical systems.
 
 ## Key Features ✨
 
 - **Highly Modular Design** 🛠️: Components are easily interchangeable, making the framework intuitive and user-friendly.
 - **High Performance** ⚡: Utilizes `cupy` for GPU-accelerated FFT calculations, significantly speeding up simulations compared to CPU-based methods.
-- **Benchmarking** 📊: Includes performance benchmarking for different configurations (benchmark data will be added).
-- **Define Optical Elements** 🔍: Simulate lenses, phase plates, and other custom optical elements.
-- **Angular Spectrum Propagation** 📐: Compute light field propagation in both real and Fourier spaces.
+- **Define Optical Elements** 🔍: Simulate lenses, phase plates, apertures, gratings, and other custom optical elements.
+- **Angular Spectrum Propagation** 📐: Compute light field propagation in both real and Fourier spaces (`Fresnel` / `Rigorous` modes).
+- **Multilayer TMM** 🧱: Transfer-matrix computations for thin-film stacks (`multilayer/`).
 - **Visualization Tools** 📊: Generate plots for intensity and phase distribution of light fields.
-
-## Calculation Method 🧠
-
-This program employs the Angular Spectrum Method to calculate the light field distribution at different spatial positions, given the light field at a known plane. By transforming the known plane's light field into the frequency domain, the method allows propagation to any other plane, accurately capturing the evolution of light through free space or optical elements.
+- **Physical Regression Tests** ✅: pytest suite covering energy conservation, focusing, and TMM analytic checks.
 
 ## Requirements 📋
 
-- Python 3.7+ 🐍
-- `numpy` 📦
-- `cupy` (for GPU acceleration) 💨
-- `matplotlib` 📈
+- Python 3.10+
+- CUDA 12 capable GPU (drivers only — the CUDA runtime libraries are installed via pip wheels)
+- See `requirements.txt` for pinned dependencies
 
 ## Installation 🛠️
 
-1. Install the dependencies:
+```bash
+# 1. Create and activate a virtual environment (Python 3.10+)
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Linux/macOS
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+# 2. Install dependencies (includes CUDA 12 runtime wheels — no CUDA Toolkit needed)
+pip install -r requirements.txt
 
-2. Install the correct version of `cupy` for GPU acceleration (based on your CUDA version). For example:
+# 3. Install the framework in editable mode
+pip install -e .
+```
 
-   ```bash
-   pip install cupy-cuda11x  # Replace '11x' with your CUDA version
-   ```
+> **GPU note**: CuPy 13 + the `nvidia-*-cu12` pip wheels provide the full CUDA runtime
+> (NVRTC, cuFFT, cuBLAS…). You only need a working NVIDIA driver. If you prefer a system
+> CUDA Toolkit, install one matching your driver and the wheels will still work.
 
-3. To check your CUDA version, run:
+## Project Layout 🗂️
 
-   ```bash
-   nvcc --version
-   ```
-
-## Benchmark (Performance Data) ⏱️
-
-| Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (8192x8192) ⚡ |
-|---------------------|--------------------------|-----------------------------|----------------------------|
-| MATLAB              | TBD                      | TBD                         | TBD                        |
-| NumPy (CPU)         | 0.003 s                  | 0.038 s                     | 3.438 s                    |
-| SciPy (CPU)         | 0.001 s                  | 0.023 s                     | 1.919 s                    |
-| CuPy (GPU)          | 0.155 s                  | 0.018 s                     | 0.094 s                    |
+```
+optical_system/      核心仿真框架（OpticalSystem + 光学元件）
+  elements/          元件实现（透镜/光阑/光栅/轴棱锥/动量空间元件）
+propagation/         角谱传播算法
+  multi_layer/       H-Q 形式多层膜场分布工具（MultiLayerTM）
+utils/               光束模型、常量、插值工具
+visualization/       截面/纵截面绘图
+analytical/          解析近似计算脚本
+examples/            实验脚本集合（从仓库根目录直接运行）
+multilayer/          薄膜 TMM 计算工作区
+  common/            公共库（物料 nk 加载 + kx 驱动 TMM）
+  round1/, round2/   计算轮次（脚本 + 数据 + 结果）
+tests/               pytest 物理回归套件
+AUDIT.md             全面审计报告（问题清单与处置结论）
+```
 
 ## Usage 📝
 
 ### Initial Light Field and Simulation Setup 💡
 
-The initial light field must be specified at `z=0`. This field can be a Gaussian beam or any arbitrary distribution. Once defined, the program calculates the propagation of the light field through various optical elements placed at different `z` positions.
+The initial light field must be specified at `z=0`. This field can be a Gaussian beam or any
+arbitrary distribution. Once defined, the program calculates the propagation of the light field
+through various optical elements placed at different `z` positions.
 
-Specify the simulation range and resolution carefully, as these directly affect accuracy. The Angular Spectrum Method uses Fourier transforms, so both spatial extent and resolution (mesh size) are critical for accurate results.
+Specify the simulation range and resolution carefully, as these directly affect accuracy.
 
 ### Fourier Optics and FFT Overview 🔍
 
-Fourier optics represents any light field in terms of its spatial frequency components, computed using the Fast Fourier Transform (FFT). The Angular Spectrum Method operates in the frequency (momentum) space, making understanding the relationship between real space and frequency space crucial for accurate simulation.
+- **Spatial Sampling (Δx, Δy)** 📏: To avoid aliasing, typically Δx, Δy < 1 / (2 ∗ f_max).
+- **Simulation Window Size (Lx, Ly)** 📐: Determines the frequency resolution, Δf = 1 / L.
+- **Frequency Coverage (Lf)** 🌌: Lf = N ∗ Δf.
 
-- **Spatial Sampling (Δx, Δy)** 📏: The sampling interval affects how well high-frequency components are captured. To avoid aliasing, typically Δx, Δy < 1 / (2 ∗ f_max), where f_max is the maximum spatial frequency.
-- **Simulation Window Size (Lx, Ly)** 📐: The extent of the simulation region determines the frequency resolution, Δf = 1 / L, where L is the size of the simulation window. A larger window size results in finer frequency resolution.
-- **Frequency Coverage (Lf)** 🌌: The frequency coverage is Lf = N ∗ Δf, where N is the number of sampling points, and Δf is the frequency resolution.
-
-Proper selection of the sampling interval and window size is essential for accurate Fourier transform calculations and light field propagation.
+Proper selection of the sampling interval and window size is essential for accurate results.
+Note that the angular spectrum propagator does not band-limit the spectrum: for long
+propagation distances keep the simulation window larger than the beam path to avoid
+wrap-around aliasing.
 
 ### Step-by-Step Workflow 🛠️
 
-1. **Define Initial Light Field** 💡: Specify the initial light field at `z=0`. This could be a Gaussian beam or any other arbitrary field.
-2. **Define Optical Elements** 🔍: Create various optical elements (e.g., lenses, phase plates) and specify their positions.
-3. **Propagate Light Field** ➡️: Use `OpticalSystem` to set up the initial field, add elements, and simulate propagation.
-4. **Visualize Results** 📊: Use the `Plotter` class to visualize the intensity and phase distribution of the propagated field.
+1. **Define Initial Light Field** 💡
+2. **Define Optical Elements** 🔍 and their `z_position`s
+3. **Propagate Light Field** ➡️ via `OpticalSystem`
+4. **Visualize Results** 📊 via `Plotter`
 
-The workflow is illustrated below:
+> **Modulation functions** (e.g. `SpatialPlate(modulation_function=...)`) receive **CuPy
+> arrays** — use `cupy` ufuncs (`cp.exp`, `cp.arctan2`, …) inside them, not `numpy`.
 
-- **Define Initial Light Field** ➡️ **Add Optical Elements** ➡️ **Propagate Light Field** ➡️ **Visualize Results**
+### Numerical Precision
+
+`OpticalSystem` defaults to `complex128`/`float64` (research precision). For very large meshes
+that would exhaust GPU memory, pass `dtype=cp.complex64` explicitly.
 
 ## Example Code 💻
 
-Below is a simplified example workflow demonstrating a 4f system using lenses and phase plates. Users can modify this example to suit their needs.
-
-### Cross-Section and Longitudinal Section Plotting 📊
+Below is a simplified example workflow demonstrating a 4f system using lenses and phase plates:
 
 ```python
+import cupy as cp
 import numpy as np
 from optical_system.system import OpticalSystem
 from optical_system.elements import Lens, SpatialPlate
@@ -102,61 +115,64 @@ w_0 = 10.0  # Beam waist
 x = np.linspace(-sim_size, sim_size, mesh)
 y = np.linspace(-sim_size, sim_size, mesh)
 
-# ----------------------------------------------------------------------------------------------------------------------
 # Define initial light field (Gaussian beam)
 initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
 
-# ----------------------------------------------------------------------------------------------------------------------
 # Create optical system and add elements
 optical_system = OpticalSystem(wavelength, x, y, initial_field)
 f = 100  # Focal length
 optical_system.add_element(
-   SpatialPlate(z_position=1, modulation_function=lambda X, Y: np.exp(1j * np.arctan2(Y, X))))
+    # 调制函数接收 cupy 数组：必须用 cp ufunc
+    SpatialPlate(z_position=1, modulation_function=lambda X, Y: cp.exp(1j * cp.arctan2(Y, X))))
 optical_system.add_element(Lens(z_position=f + 1, focal_length=f))
 optical_system.add_element(Lens(z_position=3 * f + 1, focal_length=f))
 
-# ----------------------------------------------------------------------------------------------------------------------
 # Create plotter
 plotter = Plotter(x, y)
 
-# ----------------------------------------------------------------------------------------------------------------------
-# Compute and Visualization
-plot_cross_sections = True
-plot_longitudinal_section = True
+# Compute cross sections
+cross_z_positions = [0, 1, 2 * f + 1, 4 * f + 1]
+cross_sections = optical_system.propagate_to_cross_sections(
+    cross_z_positions,
+    return_momentum_space_spectrum=True,
+    propagation_mode='Fresnel')  # Fresnel | Rigorous
 
-if plot_cross_sections:
-   # Compute
-   cross_z_positions = [0, 1, 2 * f + 1, 4 * f + 1]
-   cross_sections
-   = optical_system.propagate_to_cross_sections(cross_z_positions,
-                                                return_momentum_space_spectrum=True,
-                                                propagation_mode='Fresnel')  # Fresnel | Rigorous
 # Plot
 plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=False)
 
-# another visualization mode
-if plot_longitudinal_section:  # independently of cross_sections
-   # Compute
-   coord_axis, z_coords, intensity, phase = (
-      optical_system.propagate_to_longitudinal_section(direction='x',
-                                                       position=0.0,
-                                                       num_z=100,
-                                                       z_max=4 * f + 1,
-                                                       propagation_mode='Rigorous'))  # Fresnel | Rigorous
-
-   # Plot
-   plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase, save_label='test-longitudinal_section',
-                                     show=False)
+# Compute and plot a longitudinal section
+coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
+    direction='x', position=0.0, num_z=100, z_max=4 * f + 1,
+    propagation_mode='Rigorous')
+plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
+                                  save_label='test-longitudinal_section', show=False)
 ```
 
-### Explanation 📖
+More complete experiments live in `examples/` — run any of them from the repository root:
 
-- **Define Parameters** ⚙️: Set basic parameters like wavelength, simulation size, and mesh size.
-- **Initialize System** 🛠️: Create initial Gaussian beam and define spatial coordinates.
-- **Add Elements** 🔍: Insert elements like lenses and phase plates to form a 4f system.
-- **Propagate and Plot** 📊: Simulate field propagation and visualize both cross-sections and longitudinal sections independently.
+```bash
+python examples/vortex_beam-study-s1mple_4f_system.py
+```
+
+## Testing ✅
+
+```bash
+python -m pytest tests/
+```
+
+Tests covering the import chain, element construction, and physics (energy conservation,
+plane-wave phase, lens focusing, TMM analytic limits) run automatically; GPU-dependent tests
+are skipped when CUDA is unavailable.
+
+## Benchmark (Performance Data) ⏱️
+
+| Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (8192x8192) ⚡ |
+|---------------------|--------------------------|-----------------------------|----------------------------|
+| MATLAB              | TBD                      | TBD                         | TBD                        |
+| NumPy (CPU)         | 0.003 s                  | 0.038 s                     | 3.438 s                    |
+| SciPy (CPU)         | 0.001 s                  | 0.023 s                     | 1.919 s                    |
+| CuPy (GPU)          | 0.155 s                  | 0.018 s                     | 0.094 s                    |
 
 ## License 📜
 
 This project has no license.
-

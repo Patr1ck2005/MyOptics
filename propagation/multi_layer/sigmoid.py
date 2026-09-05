@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 fs = 9
 plt.rcParams['font.size'] = fs

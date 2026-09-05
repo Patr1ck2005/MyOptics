@@ -1,7 +1,6 @@
-from cls import *
-
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from cls import *
 
 # 假设你的 Layer 和 MultiLayerTM 已经定义在上面……
 

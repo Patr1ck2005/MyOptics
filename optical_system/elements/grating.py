@@ -3,6 +3,7 @@ import cupy as cp
 from optical_system.elements_cls import OpticalElement, SpatialPlate
 from utils.constants import PI
 
+
 class SinePhaseGrating(SpatialPlate):
     def __init__(self, z_position, period, amplitude):
         """
@@ -15,7 +16,10 @@ class SinePhaseGrating(SpatialPlate):
         """
         self.period = period
         self.amplitude = amplitude
-        super().__init__(z_position, modulation_function=lambda X, Y: cp.exp(1j * self.amplitude * cp.sin(2 * PI * Y / self.period)))
+        super().__init__(
+            z_position,
+            modulation_function=lambda X, Y: cp.exp(
+                1j * self.amplitude * cp.sin(2 * PI * Y / self.period)))
 
 
 class RectAmplitudeGrating(OpticalElement):
@@ -47,7 +51,7 @@ class RectAmplitudeGrating(OpticalElement):
         # 创建y方向的振幅调制
         _, Y = cp.meshgrid(x, y)
         # 按周期生成狭缝位置，使用矩形函数模拟
-        grating_pattern = ((cp.mod(Y, self.period) < self.slit_width)).astype(cp.float32)
+        grating_pattern = (cp.mod(Y, self.period) < self.slit_width).astype(cp.float32)
 
         # 应用振幅调制
         return U * grating_pattern

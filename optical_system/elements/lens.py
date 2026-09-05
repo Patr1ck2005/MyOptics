@@ -3,6 +3,7 @@ import cupy as cp
 from optical_system.elements_cls import Lens, OpticalElement
 from utils.constants import PI
 
+
 class ObjectLens(Lens):
 
     def __init__(self, z_position, focal_length, NA=0):

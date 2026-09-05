@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myoptics"
+version = "0.2.0"
+description = "Fourier optics simulation framework (angular spectrum method, GPU-accelerated with CuPy)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Wang Keren" }]
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "matplotlib>=3.9",
+    "cupy-cuda12x>=13.3",
+    "tqdm>=4.66",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "optical_system*",
+    "propagation*",
+    "utils*",
+    "visualization*",
+    "analytical*",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["examples", ".venv", "multilayer"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["B905"]  # zip(strict=) 为 py310+ 新参数，对物理代码收益有限
+
+[tool.ruff.lint.per-file-ignores]
+# legacy 一次性探索脚本：仅放宽风格类规则，保留正确性检查（见 AUDIT.md 遗留节）
+"propagation/multi_layer/*" = ["E501", "E701", "E702", "E722", "B905", "F403", "F405", "E741", "E731"]
+"tests/*" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,13 +1,14 @@
 import numpy as np
 
+
 class GaussianBeam:
     """
     高斯光束生成器类，用于计算高斯光束的复振幅光场。
 
     参数：
     wavelength (float): 光波波长 (单位：与 x, y 坐标单位一致，例如米)
-    waist_radius (float): 束腰半径 \( w_0 \) (单位：与 x, y 坐标单位一致，例如米)
-    divergence_angle (float, optional): 发散角 \(\theta_0\) (单位：弧度，默认根据波长和束腰半径计算)
+    waist_radius (float): 束腰半径 \\( w_0 \\) (单位：与 x, y 坐标单位一致，例如米)
+    divergence_angle (float, optional): 发散角 \\(\theta_0\\) (单位：弧度，默认根据波长和束腰半径计算)
     """
 
     def __init__(self, wavelength, waist_radius, divergence_angle=None):
@@ -19,7 +20,7 @@ class GaussianBeam:
         self.z_rayleigh = np.pi * waist_radius**2 / wavelength  # 瑞利长度
 
     def compute_field(self, z_position, x, y):
-        """
+        r"""
         计算指定传播距离 \( z \) 和网格上的高斯光束复振幅光场。
 
         参数：
