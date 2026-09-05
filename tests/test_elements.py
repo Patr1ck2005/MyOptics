@@ -68,7 +68,9 @@ def test_object_lens_nonparaxial_phase():
     out = ol.apply(U, x, x, wl)
     r = cp.sqrt(X ** 2 + Y ** 2)
     expected_phase = 2 * cp.pi / wl * (cp.sqrt(f ** 2 + r ** 2) - f)
-    assert cp.allclose(cp.angle(out), -expected_phase % (2 * cp.pi), atol=1e-6)
+    # 在单位圆上比较，规避 angle 值域 (-π, π] 与 mod 2π 的 wrap 差异
+    unit = cp.exp(1j * (cp.angle(out) + expected_phase))
+    assert cp.allclose(unit, 1.0, atol=1e-6)
 
 
 @requires_gpu
@@ -104,16 +106,25 @@ def test_axicon_geometry_consistency():
 
 @requires_gpu
 def test_momentum_space_plate_vortex():
-    """动量空间涡旋相位板：输出场中心应为相位奇点（强度为零）。"""
+    """动量空间涡旋相位板：输出场中心应为相位奇点（强度为零）。
+
+    注意：DC 分量 (KX=KY=0) 的 arctan2(0,0)=0 按约定不参与角向抵消，
+    测试中显式将其置零（与 SimpleMSPP 用 inner_NA 掩掉中心区域的实际用法一致）。
+    """
     wl = 1.55
-    plate = MomentumSpacePlate(0, modulation_function=lambda KX, KY: cp.exp(1j * 2 * cp.arctan2(KY, KX)))
+
+    def vortex_phase(KX, KY):
+        phase = cp.exp(1j * 2 * cp.arctan2(KY, KX))
+        return cp.where((KX == 0) & (KY == 0), 0j, phase)
+
+    plate = MomentumSpacePlate(0, modulation_function=vortex_phase)
     x = cp.linspace(-50, 50, 257)
     X, Y = cp.meshgrid(x, x)
     U = cp.exp(-(X ** 2 + Y ** 2) / 30 ** 2).astype(cp.complex128)
     out = plate.apply(U, x, x, wl)
     center = cp.abs(out[128, 128])
     peak = cp.abs(out).max()
-    assert center < 1e-6 * peak
+    assert center < 1e-9 * peak
 
 
 @requires_gpu

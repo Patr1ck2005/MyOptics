@@ -36,7 +36,7 @@ class RectAmplitudeGrating(OpticalElement):
         self.period = period
         self.slit_width = slit_width
 
-    def apply(self, U, x, y, **kwargs):
+    def apply(self, U, x, y, wavelength=None):
         """
         光栅的振幅调制。
 
@@ -44,6 +44,7 @@ class RectAmplitudeGrating(OpticalElement):
         U (ndarray): 输入光场。
         x (ndarray): x轴坐标。
         y (ndarray): y轴坐标。
+        wavelength: 未使用（振幅光栅与波长无关），仅为与元件接口一致。
 
         返回:
         ndarray: 处理后的光场。
@@ -73,7 +74,7 @@ class SineAmplitudeGrating(OpticalElement):
         self.amplitude = amplitude
         self.bias = bias
 
-    def apply(self, U, x, y, **kwargs):
+    def apply(self, U, x, y, wavelength=None):
         """
         光栅的振幅调制。
 
@@ -81,6 +82,7 @@ class SineAmplitudeGrating(OpticalElement):
         U (ndarray): 输入光场。
         x (ndarray): x轴坐标。
         y (ndarray): y轴坐标。
+        wavelength: 未使用（振幅光栅与波长无关），仅为与元件接口一致。
 
         返回:
         ndarray: 处理后的光场。

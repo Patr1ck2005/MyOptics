@@ -1,6 +1,15 @@
 """pytest 共享 fixture 与 GPU 可用性检测。"""
-import cupy as cp
-import pytest
+import sys
+from pathlib import Path
+
+# 先注册 pip 轮子的 CUDA DLL 目录（Windows 必需），再导入 cupy
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utils.cuda_path import ensure_cuda_dll_dirs  # noqa: E402
+
+ensure_cuda_dll_dirs()
+
+import cupy as cp  # noqa: E402
+import pytest  # noqa: E402
 
 
 def _gpu_available() -> bool:
