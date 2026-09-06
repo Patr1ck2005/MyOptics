@@ -36,6 +36,7 @@ nav:
       - 角谱传播: physics/angular-spectrum.md
       - 多层膜 TMM 与传函耦合: physics/multilayer-tmm.md
       - 矢量光学: physics/vector-optics.md
+      - 宽谱与参数扫描: physics/broadband-workflows.md
   - 基准测试: benchmark.md
   - API 参考:
       - OpticalSystem: api/system.md
@@ -43,6 +44,7 @@ nav:
       - 传播器: api/propagator.md
       - 多层膜 TMM: api/tmm.md
       - 矢量引擎: api/vector.md
+      - 工作流层: api/workflows.md
   - 开发:
       - CI 与自托管 runner: ci.md
       - 开发流程: development.md

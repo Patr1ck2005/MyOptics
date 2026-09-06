@@ -2,6 +2,31 @@
 
 本项目的所有重要变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [0.5.0] — 2026-09-07 (M3: 宽谱/批量工作流)
+
+### Added
+- **C4 Field 结果容器** `workflows/field.py`：命名强度分量 + 可选复场
+  快照 + 元数据；npz 压缩持久化（精确往返）；`line_cut` 截线；
+  `from_scalar_system` / `from_vector_system` 一键提取（Field 是
+  GPU → numpy 的数据边界）。
+- **C3 ParameterSweep** `workflows/sweep.py`：参数网格笛卡尔积扫描
+  执行器，`z_of` 钩子从参数推导传播平面；指标库（峰值/峰值坐标/
+  窗口质心/FWHM 亚像素插值，解析高斯锚点验证 <1e-2）；结果直接进
+  pandas / CSV，`best()` 按 nan 忽略择优。
+- **A3 SimSpectrum** `workflows/spectrum.py`：宽谱照明的波长分解仿真
+  ——非相干合成（Σw·|E|²，LED/荧光类）与相干合成（|Σ√w·E·e^{iφ}|²，
+  相干长度覆盖光程差时）两种口径，权重自动归一，网格一致性校验。
+- **桥接** `workflows/bridge.py::lift_to_vector`：标量场提升为指定
+  偏振态 VectorField（近轴与标量传播一致 O(θ₀²)），矢量引擎续算入口。
+- example `broadband_chromatic_shift.py`：衍射透镜色差焦移定量演示
+  ——(λ, z) 二维扫描测得焦移曲线与理论 f₀λ₀/λ 吻合到网格分辨率，
+  宽谱焦斑 FWHM 0.56→0.60μm、峰值 −25%（色差模糊）。
+- 11 项 workflows 测试。
+
+### Changed
+- `pyproject.toml`：`workflows*` 纳入安装包，版本 0.5.0。
+- `.gitignore` 补 `site/`（mkdocs 构建产物）。
+
 ## [0.4.0] — 2026-09-07 (M2: 全矢量引擎)
 
 ### Added
