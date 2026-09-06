@@ -83,17 +83,16 @@ E_far = prop.propagate(out_x, z_prop)
 I_far = cp.asnumpy(E_far.intensity())
 ny, nx = I_far.shape
 line = I_far[ny // 2, :]
-center_I = float(cp.sum(E_far.intensity()[ny // 2 - 2:ny // 2 + 3,
-                                          nx // 2 - 2:nx // 2 + 3]).get())
-peak_I = float(cp.max(E_far.intensity()[ny // 2, :]))   # 截线峰（避开衍射暗环）
-print(f"传播 {z_prop} μm 后: 轴上 5x5 强度和/截线峰 = {center_I / peak_I:.4f}"
-      f"（矢量涡旋中心暗，< 0.1）")
+# 中心暗度：中心单像素 / 截线环峰（同口径单像素比，环峰即截线最大值）
+center_pixel = float(I_far[ny // 2, nx // 2])
+ring_peak = float(line.max())
+print(f"传播 {z_prop} μm 后: 中心像素/环峰 = {center_pixel / ring_peak:.4f}"
+      f"（矢量涡旋中心暗，远 < 1）")
 
 # ----------------------------------------------------------------------------
 # 4. 可视化
 fig, axes = plt.subplots(2, 3, figsize=(15, 9))
 amp_x = cp.asnumpy(cp.abs(ex_x))
-amp_y = cp.asnumpy(cp.abs(ey_x))
 ph_vortex = cp.asnumpy(cp.angle(u_vortex))
 
 im0 = axes[0, 0].imshow(amp_x, extent=[float(x[0]), float(x[-1])] * 2,
@@ -101,13 +100,28 @@ im0 = axes[0, 0].imshow(amp_x, extent=[float(x[0]), float(x[-1])] * 2,
 axes[0, 0].set_title(r'$|E_x|$ after q-plate (x input)')
 fig.colorbar(im0, ax=axes[0, 0], shrink=0.8)
 
-# 偏振方向箭头图（欠采样）
+# 局部偏振方向（椭圆取向角，归一化单位箭头，只画有光的区域）
+ex_np = cp.asnumpy(ex_x)
+ey_np = cp.asnumpy(ey_x)
+amp2_x = np.abs(ex_np) ** 2
+amp2_y = np.abs(ey_np) ** 2
+psi = 0.5 * np.arctan2(2 * np.real(ex_np * np.conj(ey_np)),
+                       amp2_x - amp2_y)          # 椭圆取向角（mod π）
+amp_max = amp2_x.max() + amp2_y.max()
+bright = (amp2_x + amp2_y) > 0.02 * amp_max        # 幅值阈值内的像素
 step = 12
-axes[0, 1].quiver(
-    cp.asnumpy(X)[::step, ::step], cp.asnumpy(Y)[::step, ::step],
-    cp.asnumpy(ex_x)[::step, ::step].real, cp.asnumpy(ey_x)[::step, ::step].real,
-    scale=25, width=0.004)
-axes[0, 1].set_title('Local polarization (x input → radial-type)')
+Xs, Ys = cp.asnumpy(X)[::step, ::step], cp.asnumpy(Y)[::step, ::step]
+Us = 0.35 * np.cos(psi[::step, ::step])
+Vs = 0.35 * np.sin(psi[::step, ::step])
+Us[~bright[::step, ::step]] = 0.0
+Vs[~bright[::step, ::step]] = 0.0
+axes[0, 1].quiver(Xs, Ys, Us, Vs, angles='xy', scale_units='xy', scale=1,
+                  width=0.004, color='darkorange')
+axes[0, 1].imshow(amp_x, extent=[float(x[0]), float(x[-1])] * 2,
+                  origin='lower', cmap='Greys', alpha=0.25)
+axes[0, 1].set_xlim(float(x[0]), float(x[-1]))
+axes[0, 1].set_ylim(float(x[0]), float(x[-1]))
+axes[0, 1].set_title('Local polarization direction (radial-type)')
 
 im2 = axes[0, 2].imshow(ph_vortex, extent=[float(x[0]), float(x[-1])] * 2,
                         origin='lower', cmap='twilight',
@@ -128,7 +142,7 @@ axes[1, 2].text(0.05, 0.55,
                 f'q = {q}, λ = {wavelength} μm\n'
                 f'radial alignment: {align:.4f}\n'
                 f'RCP vortex charge: {charge:.2f}\n'
-                f'center-5x5 / peak: {center_I / peak_I:.4f}',
+                f'center / ring-peak: {center_pixel / ring_peak:.4f}',
                 fontsize=12, family='monospace')
 
 fig.suptitle('q-plate spin-orbit coupling → vector vortex beam')

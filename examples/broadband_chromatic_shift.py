@@ -84,7 +84,9 @@ for wl, fz, th, fw in zip(LAMBDAS, focal_z, theory, fwhm_at_focus):
     print(f"  λ={wl:.2f}μm: 焦面 z={fz:.1f}μm (理论 {th:.2f})  "
           f"焦斑 FWHM={fw:.2f}μm")
 print(f"焦移范围: {focal_z.max() - focal_z.min():.1f}μm "
-      f"（理论 {theory.max() - theory.min():.2f}μm）")
+      f"（理论 {theory.max() - theory.min():.2f}μm；"
+      f"测量值来自 {Z_SCAN[1] - Z_SCAN[0]:.1f}μm 步长网格上的峰值定位，"
+      f"含 ±1 格量化）")
 
 # ----------------------------------------------------------------------------
 # 2. SimSpectrum: 非相干合成（各 λ 在公称焦面 z=F0 的宽谱焦斑）

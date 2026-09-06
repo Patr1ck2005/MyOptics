@@ -30,6 +30,14 @@ def _gpu_available() -> bool:
 GPU_OK = _gpu_available()
 
 
+def pytest_addoption(parser):
+    """注册 --golden-update：重新生成黄金图像基准（生成后 skip，便于审查 diff）。"""
+    parser.addoption(
+        "--golden-update", action="store_true", default=False,
+        help="重新生成黄金图像基准哈希（生成后 skip；用 git diff 审查 tests/golden/ 变化）",
+    )
+
+
 def pytest_collection_modifyitems(config, items):
     """GPU 不可用时自动跳过所有 gpu 标记的用例。"""
     if GPU_OK:

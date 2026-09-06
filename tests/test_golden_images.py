@@ -1,12 +1,12 @@
 """黄金图像回归：固定输入 → 绘图输出 → 感知哈希（dHash）比对。
 
 目的：捕获绘图逻辑与底层物理结果的"静默漂移"——任何影响渲染输出的
-改动（配色、布局、数据）都会改变哈希；此时运行 `--golden-update`
-重新生成基准，并在 PR diff 中人工审查变化是否为预期。
+改动（配色、布局、数据）都会改变哈希；此时运行 `pytest --golden-update`
+重新生成基准，并在 git diff 中人工审查变化是否为预期。
 
 实现：dHash（difference hash）9x8 灰度差分 → 64 bit，汉明距离阈值 6。
 该哈希对渲染后端的抗锯齿/字体微差稳健，但对色带/布局/数据形态敏感。
-基准图不进 git（img/ 已忽略），首次在本地生成后随 CI 手动同步；
+基准哈希存于 tests/golden/cross_sections.npy 并纳入版本控制；
 本测试在基准缺失时自动生成并标 skip，保证首次可运行。
 """
 import os
@@ -14,9 +14,6 @@ import os
 import numpy as np
 import pytest
 from conftest import GPU_OK
-
-if GPU_OK:
-    pass
 
 pytestmark = pytest.mark.gpu
 
@@ -76,12 +73,17 @@ def _render_cross_sections(tmp_path):
 
 
 @pytest.mark.skipif(not GPU_OK, reason="GPU 不可用")
-def test_golden_cross_sections(tmp_path):
+def test_golden_cross_sections(tmp_path, pytestconfig):
     """cross-sections 渲染与黄金基准的 dHash 汉明距离 ≤ 阈值。"""
     gray = _render_cross_sections(tmp_path)
     h = _dhash(gray)
 
     golden_path = os.path.join(GOLDEN_DIR, "cross_sections.npy")
+    if pytestconfig.getoption("--golden-update"):
+        os.makedirs(GOLDEN_DIR, exist_ok=True)
+        np.save(golden_path, h)
+        pytest.skip("已更新黄金基准（--golden-update）；请用 git diff 审查")
+
     if not os.path.exists(golden_path):
         os.makedirs(GOLDEN_DIR, exist_ok=True)
         np.save(golden_path, h)

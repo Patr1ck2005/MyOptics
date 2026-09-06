@@ -107,8 +107,13 @@ axes[1, 2].text(0.05, 0.6,
                 f'radial polarization focus\n'
                 f'RW vs VectorLens corr = {corr:.4f}\n'
                 f'Ez energy fraction (RW) = '
-                f'{float(cp.sum(cp.abs(E_rw.ez) ** 2).get()) / I_rw.sum():.1%}',
-                fontsize=12, family='monospace')
+                f'{float(cp.sum(cp.abs(E_rw.ez) ** 2).get()) / I_rw.sum():.1%}\n'
+                f'\n'
+                f'Note: VectorLens (thin-lens pupil f·tanθ) vs RW\n'
+                f'(Debye pupil f·sinθ) are different physical models;\n'
+                f'the M-shaped dip of the VectorLens profile near axis\n'
+                f'is a model difference at NA=0.85, not a numerical error.',
+                fontsize=11, family='monospace')
 
 fig.suptitle('Radially polarized high-NA focusing (longitudinal-field dominant)')
 fig.tight_layout()
