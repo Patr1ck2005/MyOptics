@@ -40,6 +40,7 @@ include = [
     "analytical*",
     "multilayer*",
     "vector*",
+    "workflows*",
 ]
 
 [tool.ruff]
