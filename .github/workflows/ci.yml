@@ -30,12 +30,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        # GPU 不可用的云端环境：gpu 标记的用例自动跳过
+        # GPU 不可用的云端环境：gpu 标记的用例自动跳过。
+        # 用 pyproject 安装路径（含 pillow 等测试依赖），持续验证打包完整性
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -e .
-          pip install pytest
+          pip install -e .[dev]
       - name: Run CPU tests
         run: python -m pytest tests/ -m "not gpu"
 
