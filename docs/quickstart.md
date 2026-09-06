@@ -21,12 +21,31 @@ CUDA 库，本仓库通过 `utils/cuda_path.py`（导入 `optical_system` 时自
 
 ## 第一个仿真
 
-见[首页](index.md)。运行 `examples/` 下的任一脚本可以获得
-完整体验：
+见[首页](index.md)。受支持的示例脚本（物理结论随版本验证）：
 
 ```bash
-python examples/vortex_beam-study-s1mple_4f_system.py
-python examples/multilayer_slab_superlens.py
+python examples/radial_polarization_focusing.py    # 矢量：径向偏振高NA聚焦
+python examples/qplate_vector_vortex.py            # 矢量：q-plate 矢量涡旋
+python examples/broadband_chromatic_shift.py       # 工作流：宽谱色差焦移
+python examples/multilayer_slab_superlens.py       # 多层膜：超透镜传函
+```
+
+历史探索脚本在 `examples/legacy/`（不保证随当前版本运行），完整索引见
+`examples/README.md`。
+
+## 矢量引擎入门
+
+把标量场换成偏振受控的矢量场，其余编排不变：
+
+```python
+from vector.sources import vector_gaussian
+from vector.elements import HalfWavePlate
+from vector.system import VectorOpticalSystem
+
+src = vector_gaussian(x, x, wavelength, waist, 'LCP')    # 圆偏振高斯
+vsys = VectorOpticalSystem(wavelength, x, x, src)
+vsys.add_element(HalfWavePlate(10.0, fast_axis_angle=0.7))
+planes = vsys.propagate_to_cross_sections([0.0, 25.0])   # 各平面含 (Ex,Ey,Ez)
 ```
 
 ## 关键约定

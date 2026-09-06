@@ -2,6 +2,39 @@
 
 本项目的所有重要变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [0.5.1] — 2026-09-07 (稳定化收尾)
+
+二次全面审计（视觉检验 + 架构检验）后的整改发布。
+
+### Fixed
+- **视觉/绘图**（视觉检验发现）：
+  - q-plate example 偏振箭头图未归一化导致渲染为点阵——改为椭圆取向角
+    单位箭头 + 幅值亮度底图（V1）；
+  - q-plate example 中心暗度指标口径错误（5×5 求和对比单像素峰，
+    0.40 误导）——改为中心像素/环峰同口径（V2）；
+  - radial example 补 VectorLens(tanθ 薄透镜) vs RW(sinθ Debye) 模型差
+    注记（NA=0.85 的 M 形凹陷是模型性质非数值错误）（V3）；
+  - broadband example 焦移测量补网格量化说明（V4）。
+
+### Added
+- `pytest --golden-update` 落地：conftest 注册选项，黄金图像测试响应
+  （重新生成基准 + skip，git diff 审查）。此前报错信息引用了从未实现的
+  选项（M1 遗留）。
+
+### Changed
+- **打包完整性**：pyproject dependencies 补 `pillow>=10`（黄金测试依赖
+  此前只在 requirements.txt，`pip install -e .` 单独安装跑不了测试套件）；
+  CI tests-cpu 改用 `pip install -e .[dev]`，持续验证 pyproject 安装路径。
+- **examples 收编**：16 个 M1 迁移的历史探索脚本移入 `examples/legacy/`
+  （保留不删除），顶层只留 5 个受支持示例；新增 `examples/README.md`
+  索引（每个示例一行物理结论 + legacy 边界说明）。
+- README / docs/index / quickstart 收口到 v0.5.0 视角：补矢量引擎与
+  工作流层能力清单、项目布局、矢量入门代码；删除 MATLAB "TBD" 占位行。
+
+### Removed
+- `utils/utils.py::bilinear_interpolation_gpu`：全仓库零引用的开发中途
+  产物（功能已被 `vector/richards_wolf.py::_bilinear_sample` 取代）。
+
 ## [0.5.0] — 2026-09-07 (M3: 宽谱/批量工作流)
 
 ### Added

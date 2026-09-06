@@ -13,9 +13,11 @@ interactions in optical systems.
 - **High Performance** ⚡: Utilizes `cupy` for GPU-accelerated FFT calculations, significantly speeding up simulations compared to CPU-based methods.
 - **Define Optical Elements** 🔍: Simulate lenses, phase plates, apertures, gratings, and other custom optical elements.
 - **Angular Spectrum Propagation** 📐: Compute light field propagation in both real and Fourier spaces (`Fresnel` / `Rigorous` modes).
-- **Multilayer TMM** 🧱: Transfer-matrix computations for thin-film stacks (`multilayer/`).
+- **Vector Optics Engine** 🧭: Three-component (Ex, Ey, Ez) propagation with strict transversality projection; Richards-Wolf high-NA vectorial focusing; Jones polarization elements (waveplates, q-plates) with spin-orbit coupling (`vector/`).
+- **Multilayer TMM** 🧱: Transfer-matrix computations for thin-film stacks; multilayer transfer functions embedded as momentum-space filters for superlens simulation (`multilayer/`).
+- **Simulation Workflows** 🔁: Result containers with persistence, parameter sweeps with image metrics, and broadband (polychromatic) synthesis (`workflows/`).
 - **Visualization Tools** 📊: Generate plots for intensity and phase distribution of light fields.
-- **Physical Regression Tests** ✅: pytest suite covering energy conservation, focusing, and TMM analytic checks.
+- **Physical Regression Tests** ✅: pytest suite covering energy conservation, focusing, TMM analytic checks, and vector-optics invariants.
 
 ## Requirements 📋
 
@@ -47,13 +49,18 @@ pip install -e .
 
 ```
 optical_system/      核心仿真框架（OpticalSystem + 光学元件）
-  elements/          元件实现（透镜/光阑/光栅/轴棱锥/动量空间元件）
+  elements/          元件实现（透镜/光阑/光栅/轴棱锥/动量空间元件/多层膜平板）
 propagation/         角谱传播算法
-  multi_layer/       H-Q 形式多层膜场分布工具（MultiLayerTM）
-utils/               光束模型、常量、插值工具
-visualization/       截面/纵截面绘图
+  multi_layer/       H-Q 形式多层膜场分布工具（MultiLayerTM，研究遗留区）
+vector/              全矢量引擎（M2）：三分量场、矢量角谱传播、
+                     Richards-Wolf 高NA焦场、Jones 偏振元件、矢量系统
+workflows/           工作流层（M3）：Field 结果容器、参数扫描、
+                     宽谱合成、标量→矢量桥接
+utils/               光束模型、常量、CUDA DLL 路径
+visualization/       截面/纵截面绘图（Plotter）
 analytical/          解析近似计算脚本
-examples/            实验脚本集合（从仓库根目录直接运行）
+examples/            受支持示例（见 examples/README.md）
+  legacy/            历史探索脚本（未随版本验证）
 multilayer/          薄膜 TMM 计算工作区
   common/            公共库（物料 nk 加载 + kx 驱动 TMM）
   round1/, round2/   计算轮次（脚本 + 数据 + 结果）
@@ -152,8 +159,14 @@ plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
 More complete experiments live in `examples/` — run any of them from the repository root:
 
 ```bash
-python examples/vortex_beam-study-s1mple_4f_system.py
+python examples/radial_polarization_focusing.py    # 矢量：径向偏振高NA聚焦
+python examples/qplate_vector_vortex.py            # 矢量：q-plate 矢量涡旋
+python examples/broadband_chromatic_shift.py       # 工作流：宽谱色差焦移
+python examples/multilayer_slab_superlens.py       # 多层膜：超透镜传函
 ```
+
+See `examples/README.md` for the full index (historical exploration
+scripts live under `examples/legacy/`).
 
 ## Testing ✅
 
@@ -169,10 +182,12 @@ are skipped when CUDA is unavailable.
 
 | Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (8192x8192) ⚡ |
 |---------------------|--------------------------|-----------------------------|----------------------------|
-| MATLAB              | TBD                      | TBD                         | TBD                        |
 | NumPy (CPU)         | 0.003 s                  | 0.038 s                     | 3.438 s                    |
 | SciPy (CPU)         | 0.001 s                  | 0.023 s                     | 1.919 s                    |
 | CuPy (GPU)          | 0.155 s                  | 0.018 s                     | 0.094 s                    |
+
+See `docs/benchmark.md` for end-to-end propagation benchmarks
+(cached propagator: 2.68× on 513² × 256-step longitudinal scans).
 
 ## License 📜
 
