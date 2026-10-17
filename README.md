@@ -1,194 +1,100 @@
-# MyOptics: A Framework for Fourier Optics Simulation 🚀🔬
+# MyOptics
 
-## Overview 🌟
+**GPU Fourier optics in Python: build an optical path, propagate complex fields, and inspect the result.**
 
-MyOptics is a Python-based 🐍 framework for Fourier optics simulation, designed to model and
-analyze light 💡 propagation through optical elements. The project uses the Angular Spectrum
-Method for precise simulation, allowing for visualization of complex field distributions and
-interactions in optical systems.
+[中文](README.zh-CN.md) · [Quickstart](docs/quickstart.md) · [API](docs/api/system.md) · [Examples](examples/README.md) · [Visual gallery](docs/showcase/gallery.html)
 
-## Key Features ✨
+![Scalar Gaussian beam spreading, computed with the MyOptics Fresnel propagator](docs/showcase/gaussian-propagation.png)
 
-- **Highly Modular Design** 🛠️: Components are easily interchangeable, making the framework intuitive and user-friendly.
-- **High Performance** ⚡: Utilizes `cupy` for GPU-accelerated FFT calculations, significantly speeding up simulations compared to CPU-based methods.
-- **Define Optical Elements** 🔍: Simulate lenses, phase plates, apertures, gratings, and other custom optical elements.
-- **Angular Spectrum Propagation** 📐: Compute light field propagation in both real and Fourier spaces (`Fresnel` / `Rigorous` modes).
-- **Vector Optics Engine** 🧭: Three-component (Ex, Ey, Ez) propagation with strict transversality projection; Richards-Wolf high-NA vectorial focusing; Jones polarization elements (waveplates, q-plates) with spin-orbit coupling (`vector/`).
-- **Multilayer TMM** 🧱: Transfer-matrix computations for thin-film stacks; multilayer transfer functions embedded as momentum-space filters for superlens simulation (`multilayer/`).
-- **Simulation Workflows** 🔁: Result containers with persistence, parameter sweeps with image metrics, and broadband (polychromatic) synthesis (`workflows/`).
-- **Visualization Tools** 📊: Generate plots for intensity and phase distribution of light fields.
-- **Physical Regression Tests** ✅: pytest suite covering energy conservation, focusing, TMM analytic checks, and vector-optics invariants.
+A synthetic Gaussian beam broadens as it propagates. The red curves show the paraxial prediction for the beam radius; the background is the computed intensity. [Reproduce this figure](examples/public_gaussian.py) · [Parameters, checks and environment](docs/showcase/manifest.json).
 
-## Requirements 📋
+## What is included
 
-- Python 3.10+
-- CUDA 12 capable GPU (drivers only — the CUDA runtime libraries are installed via pip wheels)
-- See `requirements.txt` for pinned dependencies
+| Area | Implemented building blocks |
+| --- | --- |
+| Scalar optics | Cached angular-spectrum propagation, Fresnel and `Rigorous` modes; lenses, apertures, gratings and spatial or momentum filters |
+| Vector optics | Three-component fields, transverse spectral projection, Jones elements and Richards–Wolf focusing |
+| Thin films | Transfer-matrix calculations and a multilayer momentum-space filter |
+| Workflows | Field containers, parameter sweeps, coherent or incoherent spectral synthesis |
+| Inspection | Cross sections, longitudinal cuts, intensity and phase; physical regression tests |
 
-## Installation 🛠️
+Use this for controlled Fourier-optics models. The scalar `Rigorous` mode uses the exact homogeneous-medium angular-spectrum dispersion; its name does not imply a full-vector Maxwell or arbitrary-geometry solver. See [physics guidance](docs/physics/angular-spectrum.md) and the source modules for each model's assumptions.
+
+## Start here
+
+Python **3.10+**, an NVIDIA GPU with a CUDA 12 compatible driver, and the declared CuPy dependencies are required for GPU propagation.
 
 ```bash
-# 1. Create and activate a virtual environment (Python 3.10+)
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/macOS
-
-# 2. Install dependencies (includes CUDA 12 runtime wheels — no CUDA Toolkit needed)
-pip install -r requirements.txt
-
-# 3. Install the framework in editable mode
-pip install -e .
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip install -e .
+python examples/public_gaussian.py
 ```
 
-> **GPU note**: CuPy 13 + the `nvidia-*-cu12` pip wheels provide the full CUDA runtime
-> (NVRTC, cuFFT, cuBLAS…). You only need a working NVIDIA driver. On Windows, cupy's wheel
-> does not auto-discover the pip-installed libraries — this repository handles it via
-> `utils/cuda_path.py`, which runs automatically when `optical_system` is imported.
+The last command writes three PNG/SVG figures and a JSON manifest to `docs/showcase/`. It requires no downloaded beam, material or experimental data. On Windows, import `optical_system` before using CuPy kernels so the repository's CUDA DLL discovery runs. Dependency installation is shown for a fresh environment; the gallery was generated with the existing environment.
 
-## Project Layout 🗂️
-
-```
-optical_system/      核心仿真框架（OpticalSystem + 光学元件）
-  elements/          元件实现（透镜/光阑/光栅/轴棱锥/动量空间元件/多层膜平板）
-propagation/         角谱传播算法
-  multi_layer/       H-Q 形式多层膜场分布工具（MultiLayerTM，研究遗留区）
-vector/              全矢量引擎（M2）：三分量场、矢量角谱传播、
-                     Richards-Wolf 高NA焦场、Jones 偏振元件、矢量系统
-workflows/           工作流层（M3）：Field 结果容器、参数扫描、
-                     宽谱合成、标量→矢量桥接
-utils/               光束模型、常量、CUDA DLL 路径
-visualization/       截面/纵截面绘图（Plotter）
-analytical/          解析近似计算脚本
-examples/            受支持示例（见 examples/README.md）
-  legacy/            历史探索脚本（未随版本验证）
-multilayer/          薄膜 TMM 计算工作区
-  common/            公共库（物料 nk 加载 + kx 驱动 TMM）
-  round1/, round2/   计算轮次（脚本 + 数据 + 结果）
-tests/               pytest 物理回归套件
-AUDIT.md             全面审计报告（问题清单与处置结论）
-```
-
-## Usage 📝
-
-### Initial Light Field and Simulation Setup 💡
-
-The initial light field must be specified at `z=0`. This field can be a Gaussian beam or any
-arbitrary distribution. Once defined, the program calculates the propagation of the light field
-through various optical elements placed at different `z` positions.
-
-Specify the simulation range and resolution carefully, as these directly affect accuracy.
-
-### Fourier Optics and FFT Overview 🔍
-
-- **Spatial Sampling (Δx, Δy)** 📏: To avoid aliasing, typically Δx, Δy < 1 / (2 ∗ f_max).
-- **Simulation Window Size (Lx, Ly)** 📐: Determines the frequency resolution, Δf = 1 / L.
-- **Frequency Coverage (Lf)** 🌌: Lf = N ∗ Δf.
-
-Proper selection of the sampling interval and window size is essential for accurate results.
-Note that the angular spectrum propagator does not band-limit the spectrum: for long
-propagation distances keep the simulation window larger than the beam path to avoid
-wrap-around aliasing.
-
-### Step-by-Step Workflow 🛠️
-
-1. **Define Initial Light Field** 💡
-2. **Define Optical Elements** 🔍 and their `z_position`s
-3. **Propagate Light Field** ➡️ via `OpticalSystem`
-4. **Visualize Results** 📊 via `Plotter`
-
-> **Modulation functions** (e.g. `SpatialPlate(modulation_function=...)`) receive **CuPy
-> arrays** — use `cupy` ufuncs (`cp.exp`, `cp.arctan2`, …) inside them, not `numpy`.
-
-### Numerical Precision
-
-`OpticalSystem` defaults to `complex128`/`float64` (research precision). For very large meshes
-that would exhaust GPU memory, pass `dtype=cp.complex64` explicitly.
-
-## Example Code 💻
-
-Below is a simplified example workflow demonstrating a 4f system using lenses and phase plates:
+A minimal field propagation:
 
 ```python
-import cupy as cp
 import numpy as np
 from optical_system.system import OpticalSystem
-from optical_system.elements import Lens, SpatialPlate
-from visualization.plotter import Plotter
+import cupy as cp
+from propagation.propagator import AngularSpectrumPropagator
 
-# Define parameters
-wavelength = 0.5  # Wavelength in micrometers
-sim_size = 100  # Simulation size
-mesh = 1024 + 1  # Mesh size ( +1 to maintain central symmetry)
-w_0 = 10.0  # Beam waist
-x = np.linspace(-sim_size, sim_size, mesh)
-y = np.linspace(-sim_size, sim_size, mesh)
-
-# Define initial light field (Gaussian beam)
-initial_field = np.exp(-(x[:, None] ** 2 + y[None, :] ** 2) / w_0 ** 2)
-
-# Create optical system and add elements
-optical_system = OpticalSystem(wavelength, x, y, initial_field)
-f = 100  # Focal length
-optical_system.add_element(
-    # 调制函数接收 cupy 数组：必须用 cp ufunc
-    SpatialPlate(z_position=1, modulation_function=lambda X, Y: cp.exp(1j * cp.arctan2(Y, X))))
-optical_system.add_element(Lens(z_position=f + 1, focal_length=f))
-optical_system.add_element(Lens(z_position=3 * f + 1, focal_length=f))
-
-# Create plotter
-plotter = Plotter(x, y)
-
-# Compute cross sections
-cross_z_positions = [0, 1, 2 * f + 1, 4 * f + 1]
-cross_sections = optical_system.propagate_to_cross_sections(
-    cross_z_positions,
-    return_momentum_space_spectrum=True,
-    propagation_mode='Fresnel')  # Fresnel | Rigorous
-
-# Plot
-plotter.plot_cross_sections(cross_sections, save_label='test-cross_section', show=False)
-
-# Compute and plot a longitudinal section
-coord_axis, z_coords, intensity, phase = optical_system.propagate_to_longitudinal_section(
-    direction='x', position=0.0, num_z=100, z_max=4 * f + 1,
-    propagation_mode='Rigorous')
-plotter.plot_longitudinal_section(coord_axis, z_coords, intensity, phase,
-                                  save_label='test-longitudinal_section', show=False)
+x = cp.linspace(-64, 64, 512, endpoint=False)  # micrometres
+X, Y = cp.meshgrid(x, x)
+u0 = cp.exp(-(X**2 + Y**2) / 8.0**2)
+propagator = AngularSpectrumPropagator(x, x, wavelength=0.532, mode="Fresnel")
+u1 = propagator.propagate(u0, z=np.pi * 8.0**2 / 0.532)
+intensity = cp.asnumpy(cp.abs(u1)**2)
 ```
 
-More complete experiments live in `examples/` — run any of them from the repository root:
+All lengths must share one unit. `OpticalSystem` normalizes its initial field to unit discrete squared norm; the minimal low-level example above preserves the input amplitude.
 
-```bash
-python examples/radial_polarization_focusing.py    # 矢量：径向偏振高NA聚焦
-python examples/qplate_vector_vortex.py            # 矢量：q-plate 矢量涡旋
-python examples/broadband_chromatic_shift.py       # 工作流：宽谱色差焦移
-python examples/multilayer_slab_superlens.py       # 多层膜：超透镜传函
+```mermaid
+flowchart LR
+    A["Coordinates + wavelength + initial field"] --> B["Optical elements / filters"]
+    B --> C["Scalar or vector propagation"]
+    C --> D["Complex field / Field container"]
+    D --> E["Cuts, metrics and saved figures"]
+    E --> F["Sampling and physical checks"]
 ```
 
-See `examples/README.md` for the full index (historical exploration
-scripts live under `examples/legacy/`).
+## Read the public example
 
-## Testing ✅
+| Parameter | Value |
+| --- | --- |
+| Wavelength / input amplitude waist | 0.532 µm / 8 µm |
+| Grid / sample spacing | 512 × 512 / 0.25 µm |
+| Periodic FFT window | [−64, 64) µm on both axes |
+| Propagation | Fresnel, 101 planes, 0 ≤ z ≤ 2zᵣ; zᵣ = πw₀²/λ ≈ 377.94 µm |
+| Intensity normalization | Input on-axis peak = 1 for every displayed plane |
+| Beam radius | w = 2√⟨x²⟩, weighted by the complete 2D intensity |
+
+<table>
+<tr><td><img src="docs/showcase/gaussian-profiles.png" alt="Intensity cuts at zero, one and two Rayleigh lengths"></td><td><img src="docs/showcase/gaussian-width.png" alt="Numerical second-moment width against paraxial Gaussian theory"></td></tr>
+<tr><td>Beam spreading and peak reduction at fixed input normalization.</td><td>Fresnel FFT results compared with the analytic paraxial radius.</td></tr>
+</table>
+
+This is a homogeneous scalar, monochromatic, paraxial example (w₀ ≫ λ). FFT propagation assumes a periodic window; the beam must remain well inside it. Refine the grid and enlarge the window when changing the parameters. The comparison checks this specific discretization against its paraxial model; it does not measure error against a general Maxwell solution.
+
+The recorded run used Python 3.11.9, MyOptics 0.5.1, NumPy 2.1.2, Matplotlib 3.9.2, CuPy 13.3.0 and an NVIDIA RTX 4060. Its maximum relative radius error was 1.17 × 10⁻¹² and discrete power drift 4.44 × 10⁻¹⁶. [Full run manifest](docs/showcase/manifest.json) records parameters and asset hashes.
+
+## Explore further
+
+- [Supported examples](examples/README.md): vector focusing, q-plates, multilayers and broadband workflows.
+- [Quickstart](docs/quickstart.md), [documentation home](docs/index.md), [benchmarks](docs/benchmark.md) and [changelog](CHANGELOG.md).
+- `examples/legacy/` contains historical scripts that are not maintained as current runnable examples.
 
 ```bash
 python -m pytest tests/
 ```
 
-Tests covering the import chain, element construction, and physics (energy conservation,
-plane-wave phase, lens focusing, TMM analytic limits) run automatically; GPU-dependent tests
-are skipped when CUDA is unavailable.
+GPU tests are marked and skip when CUDA is unavailable. A passing suite only covers the tested models and parameter cases.
 
-## Benchmark (Performance Data) ⏱️
+## License
 
-| Framework           | Small 2D FFT (256x256) ⚡ | Medium 2D FFT (1024x1024) ⚡ | Large 2D FFT (8192x8192) ⚡ |
-|---------------------|--------------------------|-----------------------------|----------------------------|
-| NumPy (CPU)         | 0.003 s                  | 0.038 s                     | 3.438 s                    |
-| SciPy (CPU)         | 0.001 s                  | 0.023 s                     | 1.919 s                    |
-| CuPy (GPU)          | 0.155 s                  | 0.018 s                     | 0.094 s                    |
-
-See `docs/benchmark.md` for end-to-end propagation benchmarks
-(cached propagator: 2.68× on 513² × 256-step longitudinal scans).
-
-## License 📜
-
-This project has no license.
+The package metadata currently declares **Proprietary** and this repository has no open-source license grant. Public source visibility does not grant general redistribution or reuse rights.

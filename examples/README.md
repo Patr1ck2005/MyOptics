@@ -1,11 +1,16 @@
 # Examples
 
+For the smallest public, data-free example, run `python examples/public_gaussian.py`.
+It generates the [Gaussian-beam gallery](../docs/showcase/gallery.html), figures,
+parameters and numerical checks with the existing scalar Fresnel propagator.
+
 从仓库根目录运行（需要先 `pip install -e .` 并配好 GPU 环境）。
 
 ## 受支持示例（随版本维护，测试覆盖物理结论）
 
 | 脚本 | 演示内容 | 关键结论 |
 |------|----------|----------|
+| `public_gaussian.py` | 通用高斯光束的标量 Fresnel 传播 | 解析腰斑半径对照、离散功率检查，图稿与 manifest 可复现 |
 | `multilayer_slab_superlens.py` | ZnO/Ag/ZnO 膜堆作为动量空间滤波器（超透镜传函） | 365nm p 偏振倏逝增强，近场演化 |
 | `radial_polarization_focusing.py` | 径向偏振高 NA 聚焦（RW 与 VectorLens 双路径） | Ez 焦斑中心主导；两模型 NA=0.85 相关 0.96（模型差见面板注记） |
 | `qplate_vector_vortex.py` | q-plate 自旋-轨道耦合 → 矢量涡旋 | 径向对齐度 1.000000，拓扑荷 −1.00，传播后甜甜圈 |

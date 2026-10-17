@@ -1,0 +1,56 @@
+{
+  "kind": "synthetic numerical demonstration",
+  "source": "examples/public_gaussian.py",
+  "source_commit": "2130730cedeeb2c2e10d2e8d60c77a6ec3de8bb8",
+  "parameters": {
+    "wavelength_um": 0.532,
+    "amplitude_waist_um": 8.0,
+    "grid": [
+      512,
+      512
+    ],
+    "window_um": [
+      -64,
+      64
+    ],
+    "endpoint": false,
+    "dx_um": 0.25,
+    "z_range_um": [
+      0,
+      755.8719166531832
+    ],
+    "z_samples": 101,
+    "rayleigh_length_um": 377.9359583265916,
+    "mode": "Fresnel",
+    "dtype": "complex128",
+    "normalization": "input peak intensity = 1"
+  },
+  "checks": {
+    "max_relative_width_error": 1.1661782650662644e-12,
+    "max_relative_discrete_power_drift": 4.440892098500626e-16
+  },
+  "environment": {
+    "python": "3.11.9",
+    "numpy": "2.1.2",
+    "matplotlib": "3.9.2",
+    "cupy-cuda12x": "13.3.0",
+    "myoptics": "0.5.1",
+    "gpu": "NVIDIA GeForce RTX 4060"
+  },
+  "scope": "homogeneous scalar paraxial propagation, periodic FFT window; no material, device or experimental data",
+  "style": {
+    "width_mm": 105,
+    "font": "Arial",
+    "dpi": 240,
+    "ticks": "in",
+    "intensity_colormap": "custom black-blue-white (not COMSOL table)"
+  },
+  "files": {
+    "gaussian-profiles.png": "d338ab94ba57a0100c0e07d3f520828783c7bbf75e553ae1c3fbc66445671433",
+    "gaussian-profiles.svg": "beea7a0ba1838b68334631bc12a7a3b7d70e441964358b8c6f1534c8ee503c8a",
+    "gaussian-propagation.png": "67da5f8c0ea03c6f986c447726271494ffe700f44f81ffcddd1d98d98dd6254b",
+    "gaussian-propagation.svg": "ad6ff4b77c26430183104fbbf992f5170f6835cd20905a8c97d2365dfc6775a0",
+    "gaussian-width.png": "8b1dbedfc9b97b2dad4fce3489ac68086a9ed7552a12ea2f575c874b91fd42b3",
+    "gaussian-width.svg": "dedab377bc24b639da550a5aef74b750da3753de5fcfa23c6b8f9319310c0a63"
+  }
+}
